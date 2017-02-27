@@ -1,0 +1,4 @@
+*.db
+*.suo
+bin
+obj

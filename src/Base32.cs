@@ -1,12 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
 namespace CyoEncode
 {
-    public class Base32
+    public sealed class Base32 : EncodeBase
     {
-        public string Encode(byte[] input)
+        public override string Encode(byte[] input)
         {
             int outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
             var output = new StringBuilder(outputLen);
@@ -61,7 +62,6 @@ namespace CyoEncode
                 Debug.Assert(0 <= n7 && n7 <= Padding);
                 Debug.Assert(0 <= n8 && n8 <= Padding);
 
-
                 // Output...
                 output.Append(ByteToChar[n1]);
                 output.Append(ByteToChar[n2]);
@@ -76,9 +76,83 @@ namespace CyoEncode
             return output.ToString();
         }
 
-        public byte[] Decode(string input)
+        public override byte[] Decode(string input)
         {
-            throw new NotImplementedException();
+            ValidateEncoding(input, OutputChars, ByteToChar, true);
+
+            int maxOutputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
+            var output = new List<byte>(maxOutputLen);
+            int outputLen = 0;
+            int inputOffset = 0;
+            int remaining = input.Length;
+
+            while (remaining != 0)
+            {
+                // Inputs...
+                byte in1 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in2 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in3 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in4 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in5 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in6 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in7 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in8 = GetNextByte(input, inputOffset++, DecodeTable);
+                remaining -= OutputChars;
+
+                // Validate padding...
+                if (remaining == 0)
+                {
+                    //this is the final block
+                    //the first two chars cannot be padding
+                    if (in1 >= Padding || in2 >= Padding)
+                        throw new Exception("Invalid base32 character");
+                    //the following can be padding
+                    if (in3 > Padding || in4 > Padding || in5 > Padding
+                        || in6 > Padding || in7 > Padding || in8 > Padding)
+                        throw new Exception("Invalid base32 character");
+                }
+                else
+                {
+                    //no chars can be padding
+                    if (in1 >= Padding || in2 >= Padding || in3 >= Padding || in4 >= Padding
+                        || in5 >= Padding || in6 >= Padding || in7 >= Padding || in8 >= Padding)
+                        throw new Exception("Invalid base32 character");
+                }
+
+                // Outputs...
+                output.Add((byte)(((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2)));
+                output.Add((byte)(((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4)));
+                output.Add((byte)(((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1)));
+                output.Add((byte)(((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3)));
+                output.Add((byte)(((in7 & 0x07) << 5) | (in8 & 0x1f)));
+                outputLen += InputBytes;
+
+                // Padding...
+                if (in8 == Padding)
+                {
+                    --outputLen;
+                    Debug.Assert((in7 == Padding && in6 == Padding) || (in7 != Padding));
+                    if (in6 == Padding)
+                    {
+                        --outputLen;
+                        if (in5 == Padding)
+                        {
+                            --outputLen;
+                            Debug.Assert((in4 == Padding && in3 == Padding) || (in4 != Padding));
+                            if (in3 == Padding)
+                                --outputLen;
+                        }
+                    }
+                }
+            }
+
+            if (outputLen < output.Count)
+            {
+                int bytesToRemove = (output.Count - outputLen);
+                output.RemoveRange(output.Count - bytesToRemove, bytesToRemove);
+            }
+
+            return output.ToArray();
         }
 
         #region Implementation
@@ -87,6 +161,12 @@ namespace CyoEncode
         private const int OutputChars = 8;
         private const byte Padding = 32;
         private const string ByteToChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567=";
+        private static readonly byte[] DecodeTable = new byte[128];
+
+        static Base32()
+        {
+            InitDecodeTable(DecodeTable, ByteToChar);
+        }
 
         #endregion
     }

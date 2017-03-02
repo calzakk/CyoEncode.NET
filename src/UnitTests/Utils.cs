@@ -8,5 +8,10 @@ namespace UnitTests
         {
             return Encoding.ASCII.GetBytes(str);
         }
+
+        public static string GetString(byte[] bytes)
+        {
+            return Encoding.ASCII.GetString(bytes);
+        }
     }
 }

@@ -5,14 +5,14 @@ using System.Text;
 
 namespace CyoEncode
 {
-    public class Base85
+    public class Base85 : EncodeBase
     {
-        public string Encode(byte[] input)
+        public override string Encode(byte[] input)
         {
             throw new NotImplementedException();
         }
 
-        public byte[] Decode(string input)
+        public override byte[] Decode(string input)
         {
             throw new NotImplementedException();
         }

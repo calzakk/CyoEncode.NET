@@ -43,6 +43,7 @@
     <Compile Include="Base32.cs" />
     <Compile Include="Base64.cs" />
     <Compile Include="Base85.cs" />
+    <Compile Include="EncodeBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

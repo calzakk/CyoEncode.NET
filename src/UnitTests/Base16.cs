@@ -20,7 +20,13 @@ namespace UnitTests
             Assert.AreEqual("666F6F626172", base16.Encode(Utils.GetBytes("foobar")));
 
             // Decoding...
-            //TODO
+            Assert.AreEqual("", Utils.GetString(base16.Decode("")));
+            Assert.AreEqual("f", Utils.GetString(base16.Decode("66")));
+            Assert.AreEqual("fo", Utils.GetString(base16.Decode("666F")));
+            Assert.AreEqual("foo", Utils.GetString(base16.Decode("666F6F")));
+            Assert.AreEqual("foob", Utils.GetString(base16.Decode("666F6F62")));
+            Assert.AreEqual("fooba", Utils.GetString(base16.Decode("666F6F6261")));
+            Assert.AreEqual("foobar", Utils.GetString(base16.Decode("666F6F626172")));
         }
     }
 }

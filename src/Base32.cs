@@ -11,10 +11,10 @@ namespace CyoEncode
         {
             int outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
             var output = new StringBuilder(outputLen);
-
             int offset = 0;
             int remaining = input.Length;
-            while (remaining >= 1)
+
+            while (remaining != 0)
             {
                 // Input...
                 int blockSize = (remaining < InputBytes ? remaining : InputBytes);
@@ -32,22 +32,22 @@ namespace CyoEncode
                     n2 |= (byte)((input[offset + 1] & 0xc0) >> 6);
                     n3 = (byte)((input[offset + 1] & 0x3e) >> 1);
                     n4 = (byte)((input[offset + 1] & 0x01) << 4);
-                }
-                if (blockSize >= 3)
-                {
-                    n4 |= (byte)((input[offset + 2] & 0xf0) >> 4);
-                    n5 = (byte)((input[offset + 2] & 0x0f) << 1);
-                }
-                if (blockSize >= 4)
-                {
-                    n5 |= (byte)((input[offset + 3] & 0x80) >> 7);
-                    n6 = (byte)((input[offset + 3] & 0x7c) >> 2);
-                    n7 = (byte)((input[offset + 3] & 0x03) << 3);
-                }
-                if (blockSize >= 5)
-                {
-                    n7 |= (byte)((input[offset + 4] & 0xe0) >> 5);
-                    n8 = (byte)(input[offset + 4] & 0x1f);
+                    if (blockSize >= 3)
+                    {
+                        n4 |= (byte)((input[offset + 2] & 0xf0) >> 4);
+                        n5 = (byte)((input[offset + 2] & 0x0f) << 1);
+                        if (blockSize >= 4)
+                        {
+                            n5 |= (byte)((input[offset + 3] & 0x80) >> 7);
+                            n6 = (byte)((input[offset + 3] & 0x7c) >> 2);
+                            n7 = (byte)((input[offset + 3] & 0x03) << 3);
+                            if (blockSize >= 5)
+                            {
+                                n7 |= (byte)((input[offset + 4] & 0xe0) >> 5);
+                                n8 = (byte)(input[offset + 4] & 0x1f);
+                            }
+                        }
+                    }
                 }
                 offset += blockSize;
                 remaining -= blockSize;
@@ -89,14 +89,15 @@ namespace CyoEncode
             while (remaining != 0)
             {
                 // Inputs...
-                byte in1 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in2 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in3 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in4 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in5 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in6 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in7 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in8 = GetNextByte(input, inputOffset++, DecodeTable);
+                int startOffset = inputOffset;
+                byte in1 = DecodeTable[input[inputOffset++]];
+                byte in2 = DecodeTable[input[inputOffset++]];
+                byte in3 = DecodeTable[input[inputOffset++]];
+                byte in4 = DecodeTable[input[inputOffset++]];
+                byte in5 = DecodeTable[input[inputOffset++]];
+                byte in6 = DecodeTable[input[inputOffset++]];
+                byte in7 = DecodeTable[input[inputOffset++]];
+                byte in8 = DecodeTable[input[inputOffset++]];
                 remaining -= OutputChars;
 
                 // Validate padding...
@@ -104,19 +105,9 @@ namespace CyoEncode
                 {
                     //this is the final block
                     //the first two chars cannot be padding
-                    if (in1 >= Padding || in2 >= Padding)
-                        throw new Exception("Invalid base32 character");
-                    //the following can be padding
-                    if (in3 > Padding || in4 > Padding || in5 > Padding
-                        || in6 > Padding || in7 > Padding || in8 > Padding)
-                        throw new Exception("Invalid base32 character");
-                }
-                else
-                {
-                    //no chars can be padding
-                    if (in1 >= Padding || in2 >= Padding || in3 >= Padding || in4 >= Padding
-                        || in5 >= Padding || in6 >= Padding || in7 >= Padding || in8 >= Padding)
-                        throw new Exception("Invalid base32 character");
+                    EnsureNotPadding(in1, Padding, startOffset);
+                    EnsureNotPadding(in2, Padding, startOffset + 1);
+                    //no need to validate further padding chars
                 }
 
                 // Outputs...

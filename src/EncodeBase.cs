@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 
@@ -14,6 +15,22 @@ namespace CyoEncode
     {
         byte[] Decode(string input);
     }
+
+    public class BadLengthException : Exception
+    {
+        public BadLengthException(string msg)
+            : base(msg)
+        {
+        }
+    };
+
+    public class BadCharacterException : Exception
+    {
+        public BadCharacterException(string msg)
+            : base(msg)
+        {
+        }
+    };
 
     public abstract class EncodeBase : IEncode, IDecode
     {
@@ -33,7 +50,7 @@ namespace CyoEncode
         protected void ValidateEncoding(string input, int outputChars, string byteToChar, bool allowPadding)
         {
             if ((input.Length % outputChars) != 0)
-                throw new Exception("Invalid encoding");
+                throw new BadLengthException($"Encoding has bad length: {input.Length}");
 
             if (allowPadding)
             {
@@ -45,7 +62,7 @@ namespace CyoEncode
             {
                 char ch = input[i];
                 if (byteToChar.IndexOf(ch) < 0)
-                    throw new Exception($"Invalid character at offset {i}");
+                    throw new BadCharacterException($"Bad character at offset {i}");
             }
         }
 
@@ -54,13 +71,16 @@ namespace CyoEncode
             return (((encodedLength + outputChars - 1) / outputChars) * inputBytes);
         }
 
-        protected byte GetNextByte(string input, int offset, byte[] decodeTable)
+        protected void EnsurePadding(byte value, byte padding, int offset)
         {
-            char ch = input[offset];
-            if (ch >= 0x80)
-                throw new Exception($"Invalid character at offset {offset}");
-            else
-                return decodeTable[ch];
+            if (value != padding)
+                throw new BadCharacterException($"Bad character at offset {offset}");
+        }
+
+        protected void EnsureNotPadding(byte value, byte padding, int offset)
+        {
+            if (value == padding)
+                throw new BadCharacterException($"Bad character at offset {offset}");
         }
     }
 }

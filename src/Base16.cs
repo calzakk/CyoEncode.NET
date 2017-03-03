@@ -11,6 +11,7 @@ namespace CyoEncode
         {
             int outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
             var output = new StringBuilder(outputLen);
+
             foreach (byte b in input)
             {
                 // Input...
@@ -25,12 +26,13 @@ namespace CyoEncode
                 output.Append(ByteToChar[n1]);
                 output.Append(ByteToChar[n2]);
             }
+
             return output.ToString();
         }
 
         public override byte[] Decode(string input)
         {
-            ValidateEncoding(input, OutputChars, ByteToChar, true);
+            ValidateEncoding(input, OutputChars, ByteToChar, false);
 
             int maxOutputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
             var output = new List<byte>(maxOutputLen);
@@ -41,8 +43,8 @@ namespace CyoEncode
             while (remaining != 0)
             {
                 // Inputs...
-                byte in1 = GetNextByte(input, inputOffset++, DecodeTable);
-                byte in2 = GetNextByte(input, inputOffset++, DecodeTable);
+                byte in1 = DecodeTable[input[inputOffset++]];
+                byte in2 = DecodeTable[input[inputOffset++]];
                 remaining -= OutputChars;
 
                 // Outputs...

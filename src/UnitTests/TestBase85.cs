@@ -3,7 +3,7 @@
 namespace UnitTests
 {
     [TestClass]
-    public class Base85
+    public class TestBase85
     {
         [TestMethod]
         public void TestVectors()

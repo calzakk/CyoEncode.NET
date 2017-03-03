@@ -53,11 +53,10 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="Base16.cs" />
-    <Compile Include="Base32.cs" />
-    <Compile Include="Base64.cs" />
-    <Compile Include="Base85.cs" />
-    <Compile Include="Utils.cs" />
+    <Compile Include="TestBase16.cs" />
+    <Compile Include="TestBase32.cs" />
+    <Compile Include="TestBase64.cs" />
+    <Compile Include="TestBase85.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -113,13 +113,86 @@ namespace CyoEncode
 
         public override byte[] Decode(string input)
         {
-            throw new NotImplementedException();
+            int maxOutputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
+            var output = new List<byte>(maxOutputLen);
+            int inputOffset = 0;
+            int remaining = input.Length;
+
+            while (remaining >= 1)
+            {
+#if FOLD_ZERO
+                if (input[inputOffset] == 'z')
+                {
+                    ++inputOffset;
+                    output.Add(0);
+                    --remaining;
+                    continue;
+                }
+#endif
+
+                // 5 inputs
+                int padding = 0;
+                byte in1 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                byte in2 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                Debug.Assert(padding == 0);
+                byte in3 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                byte in4 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                byte in5 = NextByte(input, inputOffset++, ref remaining, ref padding);
+
+                // Output
+                uint n = (in1 * Power(85, 4))
+                    + (in2 * Power(85, 3))
+                    + (in3 * Power(85, 2))
+                    + (in4 * Power(85, 1))
+                    + in5;
+                output.Add((byte)(n >> 24));
+                if (padding <= 2)
+                {
+                    output.Add((byte)(n >> 16));
+                    if (padding <= 1)
+                    {
+                        output.Add((byte)(n >> 8));
+                        if (padding == 0)
+                        {
+                            output.Add((byte)n);
+                        }
+                    }
+                }
+            }
+
+            return output.ToArray();
         }
 
         #region Implementation
 
         private const int InputBytes = 4;
         private const int OutputChars = 5;
+
+        private byte NextByte(string input, int inputOffset, ref int remaining, ref int padding)
+        {
+            if (inputOffset >= input.Length)
+            {
+                ++padding;
+                return (85 - 1);
+            }
+
+            byte b = (byte)(input[inputOffset] - '!');
+            if (b < 85)
+            {
+                --remaining;
+                return b;
+            }
+
+            throw new BadCharacterException($"Bad character at offset {inputOffset}");
+        }
+
+        private uint Power(byte num, int count)
+        {
+            uint total = 1;
+            for (int i = 0; i < count; ++i)
+                total *= 85;
+            return total;
+        }
 
         #endregion
     }

@@ -46,7 +46,7 @@ namespace CyoEncode
             while (remaining >= 1)
             {
                 // Input...
-                int n = 0;
+                uint n = 0;
                 int padding = 0;
                 for (int i = 0; i < InputBytes; ++i)
                 {
@@ -64,15 +64,15 @@ namespace CyoEncode
                     output.Append('z');
                     continue;
                 }
-                int n5 = (n % 85);
+                uint n5 = (n % 85);
                 n = (n - n5) / 85;
-                int n4 = (n % 85);
+                uint n4 = (n % 85);
                 n = (n - n4) / 85;
-                int n3 = (n % 85);
+                uint n3 = (n % 85);
                 n = (n - n3) / 85;
-                int n2 = (n % 85);
+                uint n2 = (n % 85);
                 n = (n - n2) / 85;
-                int n1 = n;
+                uint n1 = n;
 
                 // Validate...
                 Debug.Assert(0 <= n1 && n1 < 85);

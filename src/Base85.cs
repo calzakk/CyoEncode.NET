@@ -22,19 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#define FOLD_ZERO //output 'z' instead of '!!!!!'
-//#define FOLD_SPACES //output 'y' instead of 4 spaces
-
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 
 namespace CyoEncode
 {
     public class Base85 : EncodeBase
     {
+        /// <summary>
+        /// Output 'z' instead of '!!!!!'.
+        /// </summary>
+        public bool FoldZero { get; set; } = true;
+
         public override string Encode(byte[] input)
         {
             int outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
@@ -58,13 +59,11 @@ namespace CyoEncode
                     else
                         ++padding;
                 }
-#if FOLD_ZERO
-                if (n == 0)
+                if (FoldZero && n == 0)
                 {
                     output.Append('z');
                     continue;
                 }
-#endif
                 int n5 = (n % 85);
                 n = (n - n5) / 85;
                 int n4 = (n % 85);
@@ -94,7 +93,7 @@ namespace CyoEncode
                 }
                 else
                 {
-                    // 1-4 outputs
+                    // Final; 1-4 outputs
                     Debug.Assert(1 <= padding && padding <= 4);
                     output.Append((char)(n1 + '!'));
                     if (padding < 4)
@@ -120,15 +119,15 @@ namespace CyoEncode
 
             while (remaining >= 1)
             {
-#if FOLD_ZERO
                 if (input[inputOffset] == 'z')
                 {
+                    if (!FoldZero)
+                        throw new BadCharacterException($"Bad character at offset {inputOffset}");
                     ++inputOffset;
                     output.Add(0);
                     --remaining;
                     continue;
                 }
-#endif
 
                 // 5 inputs
                 int padding = 0;

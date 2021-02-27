@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017 Graham Bull
+// Copyright(c) 2017-2021 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,69 +23,61 @@
 // SOFTWARE.
 
 using CyoEncode;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
 using System;
 using System.Text;
+using Xunit;
 
 namespace UnitTests
 {
-    [TestClass]
     public class TestBase64
     {
-        private Base64 base64 = new Base64();
+        private readonly Base64 _base64 = new Base64();
 
-        [TestMethod]
-        public void TestVectorsFromRFC4648()
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public void TestVectorsFromRFC4648(string original, string encoding)
         {
-            // Encoding...
-            Assert.AreEqual("", base64.Encode(Encoding.ASCII.GetBytes("")));
-            Assert.AreEqual("Zg==", base64.Encode(Encoding.ASCII.GetBytes("f")));
-            Assert.AreEqual("Zm8=", base64.Encode(Encoding.ASCII.GetBytes("fo")));
-            Assert.AreEqual("Zm9v", base64.Encode(Encoding.ASCII.GetBytes("foo")));
-            Assert.AreEqual("Zm9vYg==", base64.Encode(Encoding.ASCII.GetBytes("foob")));
-            Assert.AreEqual("Zm9vYmE=", base64.Encode(Encoding.ASCII.GetBytes("fooba")));
-            Assert.AreEqual("Zm9vYmFy", base64.Encode(Encoding.ASCII.GetBytes("foobar")));
+            var encoded = _base64.Encode(Encoding.ASCII.GetBytes(original));
+            encoded.Should().Be(encoding);
 
-            // Decoding...
-            Assert.AreEqual("", Encoding.ASCII.GetString(base64.Decode("")));
-            Assert.AreEqual("f", Encoding.ASCII.GetString(base64.Decode("Zg==")));
-            Assert.AreEqual("fo", Encoding.ASCII.GetString(base64.Decode("Zm8=")));
-            Assert.AreEqual("foo", Encoding.ASCII.GetString(base64.Decode("Zm9v")));
-            Assert.AreEqual("foob", Encoding.ASCII.GetString(base64.Decode("Zm9vYg==")));
-            Assert.AreEqual("fooba", Encoding.ASCII.GetString(base64.Decode("Zm9vYmE=")));
-            Assert.AreEqual("foobar", Encoding.ASCII.GetString(base64.Decode("Zm9vYmFy")));
+            var decoded = Encoding.ASCII.GetString(_base64.Decode(encoding));
+            decoded.Should().Be(original);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(BadLengthException))]
-        public void BadLength1() { base64.Decode("A"); }
+        [Theory]
+        [InlineData("A")]
+        [InlineData("AA")]
+        [InlineData("AAA")]
+        public void BadLength(string input)
+        {
+            Action action = () => _base64.Decode(input);
+            action.Should().Throw<BadLengthException>();
+        }
 
-        [TestMethod]
-        [ExpectedException(typeof(BadLengthException))]
-        public void BadLength2() { base64.Decode("AA"); }
+        [Theory]
+        [InlineData("@@@@")]
+        public void BadCharacter(string input)
+        {
+            Action action = () => _base64.Decode(input);
+            action.Should().Throw<BadCharacterException>();
+        }
 
-        [TestMethod]
-        [ExpectedException(typeof(BadLengthException))]
-        public void BadLength3() { base64.Decode("AAA"); }
-
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadCharacter() { base64.Decode("@@@@"); } //must be multiple of 4 chars
-
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadPadding1() { base64.Decode("Zm8=Zm8="); }
-
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadPadding2() { base64.Decode("Zm=8"); }
-
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadPadding3() { base64.Decode("Z=m8"); }
-
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadPadding4() { base64.Decode("Z=m="); }
+        [Theory]
+        [InlineData("Zm8=Zm8=")]
+        [InlineData("Zm=8")]
+        [InlineData("Z=m8")]
+        [InlineData("Z=m=")]
+        public void BadPadding(string input)
+        {
+            Action action = () => _base64.Decode(input);
+            action.Should().Throw<BadCharacterException>();
+        }
     }
 }

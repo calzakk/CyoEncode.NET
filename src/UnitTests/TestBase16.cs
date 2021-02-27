@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017 Graham Bull
+// Copyright(c) 2017-2021 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,45 +23,48 @@
 // SOFTWARE.
 
 using CyoEncode;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FluentAssertions;
 using System;
 using System.Text;
+using Xunit;
 
 namespace UnitTests
 {
-    [TestClass]
     public class TestBase16
     {
-        private Base16 base16 = new Base16();
+        private readonly Base16 _base16 = new Base16();
 
-        [TestMethod]
-        public void TestVectorsFromRFC4648()
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "66")]
+        [InlineData("fo", "666F")]
+        [InlineData("foo", "666F6F")]
+        [InlineData("foob", "666F6F62")]
+        [InlineData("fooba", "666F6F6261")]
+        [InlineData("foobar", "666F6F626172")]
+        public void TestVectorsFromRFC4648(string original, string encoding)
         {
-            // Encoding...
-            Assert.AreEqual("", base16.Encode(Encoding.ASCII.GetBytes("")));
-            Assert.AreEqual("66", base16.Encode(Encoding.ASCII.GetBytes("f")));
-            Assert.AreEqual("666F", base16.Encode(Encoding.ASCII.GetBytes("fo")));
-            Assert.AreEqual("666F6F", base16.Encode(Encoding.ASCII.GetBytes("foo")));
-            Assert.AreEqual("666F6F62", base16.Encode(Encoding.ASCII.GetBytes("foob")));
-            Assert.AreEqual("666F6F6261", base16.Encode(Encoding.ASCII.GetBytes("fooba")));
-            Assert.AreEqual("666F6F626172", base16.Encode(Encoding.ASCII.GetBytes("foobar")));
+            var encoded = _base16.Encode(Encoding.ASCII.GetBytes(original));
+            encoded.Should().Be(encoding);
 
-            // Decoding...
-            Assert.AreEqual("", Encoding.ASCII.GetString(base16.Decode("")));
-            Assert.AreEqual("f", Encoding.ASCII.GetString(base16.Decode("66")));
-            Assert.AreEqual("fo", Encoding.ASCII.GetString(base16.Decode("666F")));
-            Assert.AreEqual("foo", Encoding.ASCII.GetString(base16.Decode("666F6F")));
-            Assert.AreEqual("foob", Encoding.ASCII.GetString(base16.Decode("666F6F62")));
-            Assert.AreEqual("fooba", Encoding.ASCII.GetString(base16.Decode("666F6F6261")));
-            Assert.AreEqual("foobar", Encoding.ASCII.GetString(base16.Decode("666F6F626172")));
+            var decoded = Encoding.ASCII.GetString(_base16.Decode(encoding));
+            decoded.Should().Be(original);
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(BadLengthException))]
-        public void InvalidLength1() { base16.Decode("A"); }
+        [Theory]
+        [InlineData("A")]
+        public void BadLength(string input)
+        {
+            Action action = () => _base16.Decode(input);
+            action.Should().Throw<BadLengthException>();
+        }
 
-        [TestMethod]
-        [ExpectedException(typeof(BadCharacterException))]
-        public void BadCharacter() { base16.Decode("ZZ"); } //must be multiple of 2 chars
+        [Theory]
+        [InlineData("ZZ")]
+        public void BadCharacter(string input)
+        {
+            Action action = () => _base16.Decode(input);
+            action.Should().Throw<BadCharacterException>();
+        }
     }
 }

@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017 Graham Bull
+// Copyright(c) 2017-2021 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,18 +23,17 @@
 // SOFTWARE.
 
 using CyoEncode;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+using FluentAssertions;
 using System.Text;
+using Xunit;
 
 namespace UnitTests
 {
-    [TestClass]
     public class TestBase85
     {
-        private Base85 base85 = new Base85();
+        private readonly Base85 _base85 = new Base85();
 
-        [TestMethod]
+        [Fact]
         public void TestVectors()
         {
             //test taken from: https://en.wikipedia.org/wiki/Ascii85
@@ -47,13 +46,11 @@ namespace UnitTests
                 + "=@3BN#EcYf8ATD3s@q?d$AftVqCh[NqF<G:8+EV:.+Cf>-FD5W8ARlolDIal(DId<j@<?3r@:F%a+D58'ATD4$B"
                 + "l@l3De:,-DJs`8ARoFb/0JMK@qB4^F!,R<AKZ&-DfTqBG%G>uD.RTpAKYo'+CT/5+Cei#DII?(E,9)oF*2M7/c";
 
-            // Encoding...
-            var encoded = base85.Encode(Encoding.ASCII.GetBytes(original));
-            Assert.AreEqual(encoding, encoded);
+            var encoded = _base85.Encode(Encoding.ASCII.GetBytes(original));
+            encoded.Should().Be(encoding);
 
-            // Decoding...
-            var decoded = Encoding.ASCII.GetString(base85.Decode(encoding));
-            Assert.AreEqual(original, decoded);
+            var decoded = Encoding.ASCII.GetString(_base85.Decode(encoding));
+            decoded.Should().Be(original);
         }
     }
 }

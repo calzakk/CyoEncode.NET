@@ -23,9 +23,12 @@
 // SOFTWARE.
 
 using CyoEncode;
+using CyoEncode.Exceptions;
 using FluentAssertions;
 using System;
+using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace UnitTests
@@ -42,13 +45,104 @@ namespace UnitTests
         [InlineData("foob", "Zm9vYg==")]
         [InlineData("fooba", "Zm9vYmE=")]
         [InlineData("foobar", "Zm9vYmFy")]
-        public void TestVectorsFromRFC4648(string original, string encoding)
+        public void TestVectorsFromRFC4648_should_encode_successfully(string original, string encoding)
         {
             var encoded = _base64.Encode(Encoding.ASCII.GetBytes(original));
             encoded.Should().Be(encoding);
+        }
 
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public void TestVectorsFromRFC4648_should_decode_successfully(string original, string encoding)
+        {
             var decoded = Encoding.ASCII.GetString(_base64.Decode(encoding));
             decoded.Should().Be(original);
+        }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public void TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
+        {
+            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
+            using var output = new MemoryStream();
+
+            _base64.Encode(input, output);
+
+            output.Flush();
+            var outputText = Encoding.ASCII.GetString(output.ToArray());
+            outputText.Should().Be(encoding);
+        }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public void TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
+        {
+            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
+            using var output = new MemoryStream();
+
+            _base64.Decode(input, output);
+
+            output.Flush();
+            var outputText = Encoding.ASCII.GetString(output.ToArray());
+            outputText.Should().Be(original);
+        }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_async_streams(string original, string encoding)
+        {
+            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
+            using var output = new MemoryStream();
+
+            await _base64.EncodeAsync(input, output);
+
+            output.Flush();
+            var outputText = Encoding.ASCII.GetString(output.ToArray());
+            outputText.Should().Be(encoding);
+        }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "Zg==")]
+        [InlineData("fo", "Zm8=")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg==")]
+        [InlineData("fooba", "Zm9vYmE=")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_async_streams(string original, string encoding)
+        {
+            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
+            using var output = new MemoryStream();
+
+            await _base64.DecodeAsync(input, output);
+
+            output.Flush();
+            var outputText = Encoding.ASCII.GetString(output.ToArray());
+            outputText.Should().Be(original);
         }
 
         [Theory]
@@ -58,7 +152,7 @@ namespace UnitTests
         public void BadLength(string input)
         {
             Action action = () => _base64.Decode(input);
-            action.Should().Throw<BadLengthException>();
+            action.Should().Throw<BadLengthException>().WithMessage($"Encoding has bad length: {input.Length}");
         }
 
         [Theory]

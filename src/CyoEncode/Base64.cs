@@ -22,127 +22,193 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.Collections.Generic;
+using CyoEncode.Exceptions;
 using System.Diagnostics;
-using System.Text;
+using System.IO;
 
 namespace CyoEncode
 {
-    public sealed class Base64 : EncodeBase
+    public sealed class Base64 : Encoder
     {
-        public override string Encode(byte[] input)
-        {
-            int outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
-            var output = new StringBuilder(outputLen);
-            int offset = 0;
-            int remaining = input.Length;
-
-            while (remaining != 0)
-            {
-                // Input...
-                int blockSize = (remaining < InputBytes ? remaining : InputBytes);
-                Debug.Assert(blockSize >= 1);
-                byte n1 = (byte)((input[offset] & 0xfc) >> 2);
-                byte n2 = (byte)((input[offset] & 0x03) << 4);
-                byte n3 = Padding;
-                byte n4 = Padding;
-                if (blockSize >= 2)
-                {
-                    n2 |= (byte)((input[offset + 1] & 0xf0) >> 4);
-                    n3 = (byte)((input[offset + 1] & 0x0f) << 2);
-
-                    if (blockSize >= 3)
-                    {
-                        n3 |= (byte)((input[offset + 2] & 0xc0) >> 6);
-                        n4 = (byte)(input[offset + 2] & 0x3f);
-                    }
-                }
-                offset += blockSize;
-                remaining -= blockSize;
-
-                // Validate...
-                Debug.Assert(0 <= n1 && n1 <= Padding);
-                Debug.Assert(0 <= n2 && n2 <= Padding);
-                Debug.Assert(0 <= n3 && n3 <= Padding);
-                Debug.Assert(0 <= n4 && n4 <= Padding);
-
-                // Output...
-                output.Append(ByteToChar[n1]);
-                output.Append(ByteToChar[n2]);
-                output.Append(ByteToChar[n3]);
-                output.Append(ByteToChar[n4]);
-            }
-
-            return output.ToString();
-        }
-
-        public override byte[] Decode(string input)
-        {
-            ValidateEncoding(input, OutputChars, ByteToChar, true);
-
-            int maxOutputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
-            var output = new List<byte>(maxOutputLen);
-            int outputLen = 0;
-            int inputOffset = 0;
-            int remaining = input.Length;
-
-            while (remaining != 0)
-            {
-                // Inputs...
-                int startOffset = inputOffset;
-                byte in1 = DecodeTable[input[inputOffset++]];
-                byte in2 = DecodeTable[input[inputOffset++]];
-                byte in3 = DecodeTable[input[inputOffset++]];
-                byte in4 = DecodeTable[input[inputOffset++]];
-                remaining -= OutputChars;
-
-                // Validate padding...
-                if (remaining == 0)
-                {
-                    //this is the final block
-                    //the first two chars cannot be padding
-                    EnsureNotPadding(in1, Padding, startOffset);
-                    EnsureNotPadding(in2, Padding, startOffset + 1);
-                    //no need to validate further padding chars
-                }
-
-                // Outputs...
-                output.Add((byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4)));
-                output.Add((byte)(((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2)));
-                output.Add((byte)(((in3 & 0x03) << 6) | (in4 & 0x3f)));
-                outputLen += InputBytes;
-
-                // Padding...
-                if (in4 == Padding)
-                {
-                    --outputLen;
-                    if (in3 == Padding)
-                        --outputLen;
-                }
-            }
-
-            if (outputLen < output.Count)
-            {
-                int bytesToRemove = (output.Count - outputLen);
-                output.RemoveRange(output.Count - bytesToRemove, bytesToRemove);
-            }
-
-            return output.ToArray();
-        }
-
-        #region Implementation
+        public bool OptionalPadding { get; set; } = false;
 
         private const int InputBytes = 3;
         private const int OutputChars = 4;
         private const byte Padding = 64;
-        private const string ByteToChar = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        private static readonly byte[] EncodeTable = new byte[65];
         private static readonly byte[] DecodeTable = new byte[128];
 
         static Base64()
         {
-            InitDecodeTable(DecodeTable, ByteToChar);
+            const string charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+            InitEncodeTable(EncodeTable, charset);
+            InitDecodeTable(DecodeTable, charset);
         }
 
-        #endregion
+        private class EncodingData
+        {
+            public int offset = 0;
+            public int blockSize = 0;
+            public ulong blockData = 0;
+        }
+
+        private class DecodingData
+        {
+            public int offset = 0;
+            public int blockSize = 0;
+            public ulong blockData = 0;
+            public int padding = 0;
+        }
+
+        protected override object CreateEncodingData() => new EncodingData();
+
+        protected override object CreateDecodingData() => new DecodingData();
+
+        protected override void EncodeByte(byte b, Stream output, object context)
+        {
+            var data = (EncodingData)context;
+
+            ++data.offset;
+
+            ++data.blockSize;
+            data.blockData <<= 8;
+            data.blockData |= b;
+
+            if (data.blockSize < InputBytes)
+                return;
+
+            EncodeBlock(data, output);
+        }
+
+        protected override void EncodeEnd(Stream output, object context)
+        {
+            var data = (EncodingData)context;
+
+            if (data.blockSize == 0)
+                return;
+
+            EncodeBlock(data, output);
+        }
+
+        private void EncodeBlock(EncodingData data, Stream output)
+        {
+            Debug.Assert(data.blockSize <= InputBytes);
+
+            // Padding...
+            var padding = (InputBytes - data.blockSize);
+            data.blockData <<= (8 * padding);
+
+            // Input...
+            var in1 = (byte)(data.blockData >> 16);
+            var in2 = (byte)(data.blockData >> 8);
+            var in3 = (byte)data.blockData;
+            var n1 = (byte)((in1 & 0xfc) >> 2);
+            var n2 = (byte)((in1 & 0x03) << 4);
+            var n3 = Padding;
+            var n4 = Padding;
+            if (data.blockSize >= 2)
+            {
+                n2 |= (byte)((in2 & 0xf0) >> 4);
+                n3 = (byte)((in2 & 0x0f) << 2);
+                if (data.blockSize == 3)
+                {
+                    n3 |= (byte)((in3 & 0xc0) >> 6);
+                    n4 = (byte)(in3 & 0x3f);
+                }
+            }
+
+            // Validate...
+            Debug.Assert(0 <= n1 && n1 <= Padding);
+            Debug.Assert(0 <= n2 && n2 <= Padding);
+            Debug.Assert(0 <= n3 && n3 <= Padding);
+            Debug.Assert(0 <= n4 && n4 <= Padding);
+
+            // Output...
+            output.WriteByte(EncodeTable[n1]);
+            output.WriteByte(EncodeTable[n2]);
+            output.WriteByte(EncodeTable[n3]);
+            output.WriteByte(EncodeTable[n4]);
+
+            // Reset block...
+            data.blockSize = 0;
+            data.blockData = 0;
+        }
+
+        protected override void DecodeChar(char c, Stream output, object context)
+        {
+            var data = (DecodingData)context;
+
+            byte b = DecodeTable[c];
+            if (b == Invalid || (b != Padding && data.padding >= 1))
+                throw new BadCharacterException($"Bad character at offset {data.offset}");
+
+            ++data.offset;
+
+            if (b == Padding)
+            {
+                ++data.padding;
+                return;
+            }
+
+            ++data.blockSize;
+            data.blockData <<= 8;
+            data.blockData |= b;
+
+            if (data.blockSize != OutputChars)
+                return;
+
+            DecodeBlock(data, output);
+        }
+
+        protected override void DecodeEnd(Stream output, object context)
+        {
+            var data = (DecodingData)context;
+
+            if (data.blockSize == 0)
+                return;
+
+            var blockSize = (data.blockSize + data.padding);
+            if (blockSize != OutputChars && !OptionalPadding)
+                throw new BadLengthException($"Encoding has bad length: {data.offset}");
+
+            DecodeBlock(data, output);
+        }
+
+        private void DecodeBlock(DecodingData data, Stream output)
+        {
+            Debug.Assert(data.blockSize <= OutputChars);
+
+            // Padding...
+            var padding = (OutputChars - data.blockSize);
+            data.blockData <<= (8 * padding);
+
+            // Inputs...
+            var in1 = (byte)(data.blockData >> 24);
+            var in2 = (byte)(data.blockData >> 16);
+            var in3 = (byte)(data.blockData >> 8);
+            var in4 = (byte)data.blockData;
+
+            // Validate...
+            Debug.Assert(0 <= in1 && in1 < Padding); //cannot be padding
+            Debug.Assert(0 <= in2 && in2 < Padding); //cannot be padding
+            Debug.Assert(0 <= in3 && in3 <= Padding);
+            Debug.Assert(0 <= in4 && in4 <= Padding);
+
+            // Outputs...
+            output.WriteByte((byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4)));
+            if (data.blockSize >= 3)
+            {
+                output.WriteByte((byte)(((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2)));
+                if (data.blockSize == 4)
+                {
+                    output.WriteByte((byte)(((in3 & 0x03) << 6) | (in4 & 0x3f)));
+                }
+            }
+
+            // Reset block...
+            data.blockSize = 0;
+            data.blockData = 0;
+            data.padding = 0;
+        }
     }
 }

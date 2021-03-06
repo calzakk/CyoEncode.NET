@@ -1,4 +1,4 @@
-﻿// IEncoder.cs - part of the CyoEncode.NET library
+﻿// BadLengthException.cs - part of the CyoEncode.NET library
 //
 // MIT License
 //
@@ -22,23 +22,14 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.IO;
-using System.Threading.Tasks;
+using System;
 
 namespace CyoEncode
 {
-    public interface IEncoder
+    public class BadLengthException : Exception
     {
-        void Encode(Stream input, Stream output);
-
-        void Decode(Stream input, Stream output);
-
-        Task EncodeAsync(Stream input, Stream output);
-
-        Task DecodeAsync(Stream input, Stream output);
-
-        string Encode(byte[] input);
-
-        byte[] Decode(string input);
+        public BadLengthException(string message) : base(message)
+        {
+        }
     }
 }

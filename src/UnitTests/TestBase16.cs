@@ -23,7 +23,6 @@
 // SOFTWARE.
 
 using CyoEncode;
-using CyoEncode.Exceptions;
 using FluentAssertions;
 using System;
 using System.IO;

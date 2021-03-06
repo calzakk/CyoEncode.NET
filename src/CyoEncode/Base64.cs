@@ -22,7 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using CyoEncode.Exceptions;
 using System.Diagnostics;
 using System.IO;
 
@@ -95,8 +94,7 @@ namespace CyoEncode
             Debug.Assert(data.blockSize <= InputBytes);
 
             // Padding...
-            var padding = (InputBytes - data.blockSize);
-            data.blockData <<= (8 * padding);
+            data.blockData <<= (8 * (InputBytes - data.blockSize));
 
             // Input...
             var in1 = (byte)(data.blockData >> 16);
@@ -176,11 +174,10 @@ namespace CyoEncode
 
         private void DecodeBlock(DecodingData data, Stream output)
         {
-            Debug.Assert(data.blockSize <= OutputChars);
+            Debug.Assert(2 <= data.blockSize && data.blockSize <= OutputChars);
 
             // Padding...
-            var padding = (OutputChars - data.blockSize);
-            data.blockData <<= (8 * padding);
+            data.blockData <<= (8 * (OutputChars - data.blockSize));
 
             // Inputs...
             var in1 = (byte)(data.blockData >> 24);
@@ -195,14 +192,17 @@ namespace CyoEncode
             Debug.Assert(0 <= in4 && in4 <= Padding);
 
             // Outputs...
-            output.WriteByte((byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4)));
-            if (data.blockSize >= 3)
+            if (data.blockSize == OutputChars)
             {
+                output.WriteByte((byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4)));
                 output.WriteByte((byte)(((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2)));
-                if (data.blockSize == 4)
-                {
-                    output.WriteByte((byte)(((in3 & 0x03) << 6) | (in4 & 0x3f)));
-                }
+                output.WriteByte((byte)(((in3 & 0x03) << 6) | (in4 & 0x3f)));
+            }
+            else
+            {
+                output.WriteByte((byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4)));
+                if (data.blockSize == 3)
+                    output.WriteByte((byte)(((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2)));
             }
 
             // Reset block...

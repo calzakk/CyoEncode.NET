@@ -22,7 +22,6 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using CyoEncode.Exceptions;
 using System.Diagnostics;
 using System.IO;
 
@@ -95,8 +94,7 @@ namespace CyoEncode
             Debug.Assert(data.blockSize <= InputBytes);
 
             // Padding...
-            var padding = (InputBytes - data.blockSize);
-            data.blockData <<= (8 * padding);
+            data.blockData <<= (8 * (InputBytes - data.blockSize));
 
             // Input...
             var in1 = (byte)(data.blockData >> 32);
@@ -202,11 +200,10 @@ namespace CyoEncode
 
         private void DecodeBlock(DecodingData data, Stream output)
         {
-            Debug.Assert(data.blockSize <= OutputChars);
+            Debug.Assert(2 <= data.blockSize && data.blockSize <= OutputChars);
 
             // Padding...
-            var padding = (OutputChars - data.blockSize);
-            data.blockData <<= (8 * padding);
+            data.blockData <<= (8 * (OutputChars - data.blockSize));
 
             // Inputs...
             var in1 = (byte)(data.blockData >> 56);
@@ -229,19 +226,26 @@ namespace CyoEncode
             Debug.Assert(0 <= in8 && in8 <= Padding);
 
             // Outputs...
-            output.WriteByte((byte)(((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2)));
-            if (data.blockSize >= 4)
+            if (data.blockSize == OutputChars)
             {
+                output.WriteByte((byte)(((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2)));
                 output.WriteByte((byte)(((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4)));
-                if (data.blockSize >= 5)
+                output.WriteByte((byte)(((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1)));
+                output.WriteByte((byte)(((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3)));
+                output.WriteByte((byte)(((in7 & 0x07) << 5) | (in8 & 0x1f)));
+            }
+            else
+            {
+                output.WriteByte((byte)(((in1 & 0x1f) << 3) | ((in2 & 0x1c) >> 2)));
+                if (data.blockSize >= 4)
                 {
-                    output.WriteByte((byte)(((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1)));
-                    if (data.blockSize >= 6)
+                    output.WriteByte((byte)(((in2 & 0x03) << 6) | ((in3 & 0x1f) << 1) | ((in4 & 0x10) >> 4)));
+                    if (data.blockSize >= 5)
                     {
-                        output.WriteByte((byte)(((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3)));
-                        if (data.blockSize == 8)
+                        output.WriteByte((byte)(((in4 & 0x0f) << 4) | ((in5 & 0x1e) >> 1)));
+                        if (data.blockSize >= 6)
                         {
-                            output.WriteByte((byte)(((in7 & 0x07) << 5) | (in8 & 0x1f)));
+                            output.WriteByte((byte)(((in5 & 0x01) << 7) | ((in6 & 0x1f) << 2) | ((in7 & 0x18) >> 3)));
                         }
                     }
                 }

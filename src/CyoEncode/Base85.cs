@@ -150,7 +150,7 @@ namespace CyoEncode
                 if (!FoldZero || (data.blockSize != 0))
                     throw new BadCharacterException($"Bad character at offset {data.offset}");
 
-                for (var i = 0; i < 5; ++i)
+                for (var i = 0; i < InputBytes; ++i)
                     output.WriteByte(0);
 
                 return;

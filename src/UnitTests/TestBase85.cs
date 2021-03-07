@@ -135,7 +135,16 @@ namespace UnitTests
             _base85.FoldZero = true;
 
             var decoded = _base85.Decode("z");
-            decoded.Should().BeEquivalentTo(new byte[] { 0, 0, 0, 0, 0 });
+            decoded.Should().BeEquivalentTo(new byte[] { 0, 0, 0, 0 });
+        }
+
+        [Fact]
+        public void Decode_should_unfold_zeros_for_five_exclamations_when_FoldZero_is_enabled()
+        {
+            _base85.FoldZero = true;
+
+            var decoded = _base85.Decode("!!!!!");
+            decoded.Should().BeEquivalentTo(new byte[] { 0, 0, 0, 0 });
         }
 
         [Fact]

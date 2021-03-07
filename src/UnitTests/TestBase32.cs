@@ -163,7 +163,7 @@ namespace UnitTests
         public void BadCharacter(string input)
         {
             Action action = () => _base32.Decode(input);
-            action.Should().Throw<BadCharacterException>();
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
         }
 
         [Theory]
@@ -173,7 +173,8 @@ namespace UnitTests
         public void BadPadding(string input)
         {
             Action action = () => _base32.Decode(input);
-            action.Should().Throw<BadCharacterException>();
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=') + 2}");
+            //get the position of the character _after_ the first '=', then add 2 to convert to an offset (which begin at 1)
         }
     }
 }

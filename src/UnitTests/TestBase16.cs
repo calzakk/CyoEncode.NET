@@ -157,7 +157,7 @@ namespace UnitTests
         public void BadCharacter(string input)
         {
             Action action = () => _base16.Decode(input);
-            action.Should().Throw<BadCharacterException>();
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
         }
     }
 }

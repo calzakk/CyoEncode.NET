@@ -136,11 +136,11 @@ namespace CyoEncode
         {
             var data = (DecodingData)context;
 
+            ++data.offset;
+
             byte b = DecodeTable[c];
             if (b == Invalid || (b != Padding && data.padding >= 1))
                 throw new BadCharacterException($"Bad character at offset {data.offset}");
-
-            ++data.offset;
 
             if (b == Padding)
             {

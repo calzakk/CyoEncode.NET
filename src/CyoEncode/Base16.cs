@@ -73,11 +73,11 @@ namespace CyoEncode
         {
             var data = (DecodingData)context;
 
+            ++data.offset;
+
             byte b = DecodeTable[c];
             if (b == Invalid)
                 throw new BadCharacterException($"Bad character at offset {data.offset}");
-
-            ++data.offset;
 
             ++data.blockSize;
             data.blockData <<= 4;

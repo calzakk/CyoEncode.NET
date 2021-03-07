@@ -22,11 +22,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 
 namespace CyoEncode
 {
@@ -94,6 +91,7 @@ namespace CyoEncode
             if (FoldZero && (data.blockData == 0) && (data.blockSize == InputBytes))
             {
                 output.WriteByte((byte)'z');
+                data.blockSize = 0;
                 return;
             }
             data.blockData <<= (8 * (InputBytes - data.blockSize));
@@ -147,9 +145,9 @@ namespace CyoEncode
 
             ++data.offset;
 
-            if (FoldZero && (c == 'z'))
+            if (c == 'z')
             {
-                if (data.blockSize != 0)
+                if (!FoldZero || (data.blockSize != 0))
                     throw new BadCharacterException($"Bad character at offset {data.offset}");
 
                 for (var i = 0; i < 5; ++i)

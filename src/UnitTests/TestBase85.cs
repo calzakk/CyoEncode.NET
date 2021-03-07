@@ -24,6 +24,7 @@
 
 using CyoEncode;
 using FluentAssertions;
+using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -108,6 +109,42 @@ namespace UnitTests
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());
             outputText.Should().Be(original);
+        }
+
+        [Fact]
+        public void Encode_should_fold_zeros_when_FoldZero_is_enabled()
+        {
+            _base85.FoldZero = true;
+
+            var encoded = _base85.Encode(new byte[] { 0, 0, 0, 0 });
+            encoded.Should().Be("z");
+        }
+
+        [Fact]
+        public void Encode_should_not_fold_zeros_when_FoldZero_is_disabled()
+        {
+            _base85.FoldZero = false;
+
+            var encoded = _base85.Encode(new byte[] { 0, 0, 0, 0 });
+            encoded.Should().Be("!!!!!");
+        }
+
+        [Fact]
+        public void Decode_should_unfold_zeros_when_FoldZero_is_enabled()
+        {
+            _base85.FoldZero = true;
+
+            var decoded = _base85.Decode("z");
+            decoded.Should().BeEquivalentTo(new byte[] { 0, 0, 0, 0, 0 });
+        }
+
+        [Fact]
+        public void Decode_should_throw_exception_when_FoldZero_is_disabled()
+        {
+            _base85.FoldZero = false;
+
+            Action action = () => _base85.Decode("z");
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
         }
     }
 }

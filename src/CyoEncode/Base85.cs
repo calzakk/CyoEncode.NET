@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -36,6 +37,168 @@ namespace CyoEncode
 
         private const int InputBytes = 4;
         private const int OutputChars = 5;
+
+        // Spans
+
+        protected override string EncodeBytes(byte[] input)
+        {
+            var outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
+            var output = new string(default, outputLen);
+            var outputOffset = 0;
+            var offset = 0;
+            var remaining = input.Length;
+
+            unsafe
+            {
+                fixed (char* outputPtr = output)
+                {
+                    while (remaining >= 1)
+                    {
+                        // Input...
+                        uint n = 0;
+                        var padding = 0;
+                        for (int i = 0; i < InputBytes; ++i)
+                        {
+                            n <<= 8;
+                            if (remaining >= 1)
+                            {
+                                n |= input[offset++];
+                                --remaining;
+                            }
+                            else
+                                ++padding;
+                        }
+                        if (FoldZero && n == 0)
+                        {
+                            outputPtr[outputOffset] = 'z';
+                            ++outputOffset;
+                            continue;
+                        }
+                        uint n5 = (n % 85);
+                        n = (n - n5) / 85;
+                        uint n4 = (n % 85);
+                        n = (n - n4) / 85;
+                        uint n3 = (n % 85);
+                        n = (n - n3) / 85;
+                        uint n2 = (n % 85);
+                        n = (n - n2) / 85;
+                        uint n1 = n;
+
+                        // Validate...
+                        Debug.Assert(0 <= n1 && n1 < 85);
+                        Debug.Assert(0 <= n2 && n2 < 85);
+                        Debug.Assert(0 <= n3 && n3 < 85);
+                        Debug.Assert(0 <= n4 && n4 < 85);
+                        Debug.Assert(0 <= n5 && n5 < 85);
+
+                        // Output...
+                        if (padding == 0)
+                        {
+                            // 5 outputs
+                            outputPtr[outputOffset] = (char)(n1 + '!');
+                            outputPtr[outputOffset + 1] = (char)(n2 + '!');
+                            outputPtr[outputOffset + 2] = (char)(n3 + '!');
+                            outputPtr[outputOffset + 3] = (char)(n4 + '!');
+                            outputPtr[outputOffset + 4] = (char)(n5 + '!');
+                            outputOffset += OutputChars;
+                        }
+                        else
+                        {
+                            // Final; 1-4 outputs
+                            Debug.Assert(1 <= padding && padding <= 4);
+                            outputPtr[outputOffset++] = (char)(n1 + '!');
+                            if (padding < 4)
+                                outputPtr[outputOffset++] = (char)(n2 + '!');
+                            if (padding < 3)
+                                outputPtr[outputOffset++] = (char)(n3 + '!');
+                            if (padding < 2)
+                                outputPtr[outputOffset++] = (char)(n4 + '!');
+                            if (padding < 1)
+                                outputPtr[outputOffset++] = (char)(n5 + '!');
+                        }
+                    }
+                }
+            }
+
+            return output.TrimEnd(default(char));
+        }
+
+        protected override byte[] DecodeString(string input)
+        {
+            var outputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
+            var output = new byte[outputLen];
+            var outputOffset = 0;
+            var inputOffset = 0;
+            var remaining = input.Length;
+
+            while (remaining >= 1)
+            {
+                if (input[inputOffset] == 'z')
+                {
+                    if (!FoldZero)
+                        throw new BadCharacterException($"Bad character at offset {inputOffset}");
+                    ++inputOffset;
+                    output[outputOffset] = 0;
+                    output[outputOffset + 1] = 0;
+                    output[outputOffset + 2] = 0;
+                    output[outputOffset + 3] = 0;
+                    outputOffset += 4;
+                    --remaining;
+                    continue;
+                }
+
+                // 5 inputs
+                var padding = 0;
+                var in1 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                var in2 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                Debug.Assert(padding == 0);
+                var in3 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                var in4 = NextByte(input, inputOffset++, ref remaining, ref padding);
+                var in5 = NextByte(input, inputOffset++, ref remaining, ref padding);
+
+                // Output
+                var n = (in1 * Power(85, 4))
+                    + (in2 * Power(85, 3))
+                    + (in3 * Power(85, 2))
+                    + (in4 * Power(85, 1))
+                    + in5;
+                output[outputOffset++] = (byte)(n >> 24);
+                if (padding <= 2)
+                {
+                    output[outputOffset++] = (byte)(n >> 16);
+                    if (padding <= 1)
+                    {
+                        output[outputOffset++] = (byte)(n >> 8);
+                        if (padding == 0)
+                        {
+                            output[outputOffset++] = (byte)n;
+                        }
+                    }
+                }
+            }
+
+            return output.AsSpan(0, outputOffset).ToArray();
+        }
+
+        private byte NextByte(string input, int inputOffset, ref int remaining, ref int padding)
+        {
+            if (inputOffset >= input.Length)
+            {
+                ++padding;
+                return (85 - 1);
+            }
+
+            var b = (byte)(input[inputOffset] - '!');
+            if (b < 85)
+            {
+                --remaining;
+                return b;
+            }
+
+            throw new BadCharacterException($"Bad character at offset {inputOffset}");
+        }
+
+        // Streams
 
         private class EncodingData
         {

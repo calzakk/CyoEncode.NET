@@ -22,6 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
 using System.Diagnostics;
 using System.IO;
 
@@ -33,8 +34,8 @@ namespace CyoEncode
 
         private const int InputBytes = 3;
         private const int OutputChars = 4;
-        private const byte Padding = 64;
-        private static readonly byte[] EncodeTable = new byte[65];
+        private const int Padding = 64;
+        private static readonly char[] EncodeTable = new char[65];
         private static readonly byte[] DecodeTable = new byte[128];
 
         static Base64()
@@ -43,6 +44,130 @@ namespace CyoEncode
             InitEncodeTable(EncodeTable, charset);
             InitDecodeTable(DecodeTable, charset);
         }
+
+        // Spans
+
+        protected override string EncodeBytes(byte[] input)
+        {
+            var outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
+            var output = new string(default, outputLen);
+            var outputOffset = 0;
+            var offset = 0;
+            var remaining = input.Length;
+
+            unsafe
+            {
+                fixed (char* outputPtr = output)
+                {
+                    while (remaining != 0)
+                    {
+                        // Input...
+                        var blockSize = (remaining < InputBytes ? remaining : InputBytes);
+                        Debug.Assert(blockSize >= 1);
+                        var n1 = (input[offset] & 0xfc) >> 2;
+                        var n2 = (input[offset] & 0x03) << 4;
+                        var n3 = Padding;
+                        var n4 = Padding;
+                        if (blockSize >= 2)
+                        {
+                            n2 |= (input[offset + 1] & 0xf0) >> 4;
+                            n3 = (input[offset + 1] & 0x0f) << 2;
+                            if (blockSize >= 3)
+                            {
+                                n3 |= (input[offset + 2] & 0xc0) >> 6;
+                                n4 = (input[offset + 2] & 0x3f);
+                            }
+                        }
+                        offset += blockSize;
+                        remaining -= blockSize;
+
+                        // Validate...
+                        Debug.Assert(0 <= n1 && n1 <= Padding);
+                        Debug.Assert(0 <= n2 && n2 <= Padding);
+                        Debug.Assert(0 <= n3 && n3 <= Padding);
+                        Debug.Assert(0 <= n4 && n4 <= Padding);
+
+                        // Output...
+                        outputPtr[outputOffset] = EncodeTable[n1];
+                        outputPtr[outputOffset + 1] = EncodeTable[n2];
+                        outputPtr[outputOffset + 2] = EncodeTable[n3];
+                        outputPtr[outputOffset + 3] = EncodeTable[n4];
+                        outputOffset += OutputChars;
+                    }
+                }
+            }
+
+            return output;
+        }
+
+        protected override byte[] DecodeString(string input)
+        {
+            if ((input.Length % OutputChars) != 0 && !OptionalPadding)
+                throw new BadLengthException($"Encoding has bad length: {input.Length}");
+
+            var outputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
+            var output = new byte[outputLen];
+            var outputOffset = 0;
+            var inputOffset = 0;
+            var remaining = input.Length;
+
+            while (remaining != 0)
+            {
+                // Inputs...
+                var startOffset = inputOffset;
+                var in1 = NextChar(input, ref inputOffset, ref remaining);
+                var in2 = NextChar(input, ref inputOffset, ref remaining);
+                var in3 = NextChar(input, ref inputOffset, ref remaining);
+                var in4 = NextChar(input, ref inputOffset, ref remaining);
+
+                // Validate padding...
+                EnsureNotPadding(in1, Padding, startOffset);
+                EnsureNotPadding(in2, Padding, startOffset + 1);
+                if (remaining >= 1)
+                {
+                    EnsureNotPadding(in3, Padding, startOffset + 2);
+                    EnsureNotPadding(in4, Padding, startOffset + 3);
+                }
+                else
+                {
+                    var padding = false;
+                    ValidatePadding(in3, Padding, startOffset + 2, ref padding);
+                    ValidatePadding(in4, Padding, startOffset + 3, ref padding);
+                }
+
+                // Outputs...
+                output[outputOffset] = (byte)(((in1 & 0x3f) << 2) | ((in2 & 0x30) >> 4));
+                output[outputOffset + 1] = (byte)(((in2 & 0x0f) << 4) | ((in3 & 0x3c) >> 2));
+                output[outputOffset + 2] = (byte)(((in3 & 0x03) << 6) | (in4 & 0x3f));
+                outputOffset += InputBytes;
+
+                // Padding...
+                if (in4 == Padding)
+                {
+                    --outputOffset;
+                    if (in3 == Padding)
+                        --outputOffset;
+                }
+            }
+
+            return output.AsSpan(0, outputOffset).ToArray();
+        }
+
+        private byte NextChar(string input, ref int inputOffset, ref int remaining)
+        {
+            if (remaining == 0)
+                return Padding;
+
+            var b = DecodeTable[input[inputOffset]];
+            if (b == Invalid)
+                throw new BadCharacterException($"Bad character at offset {inputOffset}");
+
+            ++inputOffset;
+            --remaining;
+            return b;
+        }
+
+        // Streams
 
         private class EncodingData
         {
@@ -122,10 +247,10 @@ namespace CyoEncode
             Debug.Assert(0 <= n4 && n4 <= Padding);
 
             // Output...
-            output.WriteByte(EncodeTable[n1]);
-            output.WriteByte(EncodeTable[n2]);
-            output.WriteByte(EncodeTable[n3]);
-            output.WriteByte(EncodeTable[n4]);
+            output.WriteByte((byte)EncodeTable[n1]);
+            output.WriteByte((byte)EncodeTable[n2]);
+            output.WriteByte((byte)EncodeTable[n3]);
+            output.WriteByte((byte)EncodeTable[n4]);
 
             // Reset block...
             data.blockSize = 0;

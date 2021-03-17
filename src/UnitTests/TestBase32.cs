@@ -34,7 +34,7 @@ namespace UnitTests
 {
     public class TestBase32
     {
-        private readonly IEncoder _base32 = new Base32();
+        private readonly Base32 _base32 = new Base32();
 
         [Theory]
         [InlineData("", "")]
@@ -60,6 +60,21 @@ namespace UnitTests
         [InlineData("foobar", "MZXW6YTBOI======")]
         public void TestVectorsFromRFC4648_should_decode_successfully(string original, string encoding)
         {
+            var decoded = Encoding.ASCII.GetString(_base32.Decode(encoding));
+            decoded.Should().Be(original);
+        }
+
+        [Theory]
+        [InlineData("", "")]
+        [InlineData("f", "MY")]
+        [InlineData("fo", "MZXQ")]
+        [InlineData("foo", "MZXW6")]
+        [InlineData("foob", "MZXW6YQ")]
+        [InlineData("fooba", "MZXW6YTB")]
+        [InlineData("foobar", "MZXW6YTBOI")]
+        public void TestVectorsFromRFC4648_should_decode_successfully_with_optional_padding(string original, string encoding)
+        {
+            _base32.OptionalPadding = true;
             var decoded = Encoding.ASCII.GetString(_base32.Decode(encoding));
             decoded.Should().Be(original);
         }
@@ -163,18 +178,43 @@ namespace UnitTests
         public void BadCharacter(string input)
         {
             Action action = () => _base32.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
         }
 
         [Theory]
         [InlineData("MZXW6YQ=MZXW6YQ=")]
-        [InlineData("MZXW6Y=Q")]
-        [InlineData("MZXW6=Y=")]
-        public void BadPadding(string input)
+        public void BadPaddingInFirstBlock(string input)
         {
             Action action = () => _base32.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=') + 2}");
-            //get the position of the character _after_ the first '=', then add 2 to convert to an offset (which begin at 1)
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=')}");
+        }
+
+        [Theory]
+        [InlineData("M=ZXW6YQ")]
+        [InlineData("=MZXW6YQ")]
+        [InlineData("M=Z=====")]
+        [InlineData("=M======")]
+        public void BadPaddingAtStartOfBlock(string input)
+        {
+            Action action = () => _base32.Decode(input);
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=')}");
+        }
+
+        [Theory]
+        [InlineData("MZXW6Y=Q")]
+        [InlineData("MZXW6=YQ")]
+        [InlineData("MZXW=6YQ")]
+        [InlineData("MZX=W6YQ")]
+        [InlineData("MZ=XW6YQ")]
+        [InlineData("MZXW6=Y=")]
+        [InlineData("MZXW=6==")]
+        [InlineData("MZX=W===")]
+        [InlineData("MZ=X====")]
+        public void BadCharacterAfterPadding(string input)
+        {
+            Action action = () => _base32.Decode(input);
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=') + 1}");
+            //+1 to get the offset of the character immediately after the first =
         }
     }
 }

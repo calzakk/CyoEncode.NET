@@ -34,7 +34,7 @@ namespace UnitTests
 {
     public class TestBase16
     {
-        private readonly IEncoder _base16 = new Base16();
+        private readonly Base16 _base16 = new Base16();
 
         [Theory]
         [InlineData("", "")]
@@ -146,6 +146,8 @@ namespace UnitTests
 
         [Theory]
         [InlineData("A")]
+        [InlineData("AAA")]
+        [InlineData("AAAAA")]
         public void BadLength(string input)
         {
             Action action = () => _base16.Decode(input);
@@ -153,11 +155,12 @@ namespace UnitTests
         }
 
         [Theory]
+        [InlineData("GG")]
         [InlineData("ZZ")]
         public void BadCharacter(string input)
         {
             Action action = () => _base16.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
         }
     }
 }

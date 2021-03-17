@@ -24,7 +24,6 @@
 
 using System;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CyoEncode
@@ -34,25 +33,59 @@ namespace CyoEncode
         public const int MinBufferSize = 1;
         public const int DefaultBufferSize = 1024 * 1024; //1 MiB
 
-        public int BufferSize { get; set; } = DefaultBufferSize;
+        private int _bufferSize = DefaultBufferSize;
+
+        public int BufferSize
+        {
+            get => _bufferSize;
+            set => _bufferSize = (value >= MinBufferSize) ? value : throw new Exception($"Insufficient BufferSize: {BufferSize}");
+        }
+
+        // Spans
+
+        public string Encode(byte[] input)
+        {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
+            if (input.Length == 0)
+                return string.Empty;
+
+            return EncodeBytes(input);
+        }
+
+        public byte[] Decode(string input)
+        {
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
+            if (input.Length == 0)
+                return Array.Empty<byte>();
+
+            return DecodeString(input);
+        }
+
+        // Streams
 
         public void Encode(Stream input, Stream output)
-            => EncodeAsync(input, output).GetAwaiter().GetResult();
+            => EncodeAsync(input, output).Wait();
 
         public void Decode(Stream input, Stream output)
-            => DecodeAsync(input, output).GetAwaiter().GetResult();
+            => DecodeAsync(input, output).Wait();
 
         public async Task EncodeAsync(Stream input, Stream output)
         {
-            if (BufferSize < MinBufferSize)
-                throw new Exception($"Insufficient BufferSize: {BufferSize}");
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
 
             var buffer = new byte[BufferSize];
             var data = CreateEncodingData();
 
             while (true)
             {
-                var length = await input.ReadAsync(buffer, 0, buffer.Length);
+                var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                 if (length == 0)
                     break;
 
@@ -65,15 +98,17 @@ namespace CyoEncode
 
         public async Task DecodeAsync(Stream input, Stream output)
         {
-            if (BufferSize < MinBufferSize)
-                throw new Exception($"Insufficient BufferSize: {BufferSize}");
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
 
             var buffer = new byte[BufferSize];
             var data = CreateDecodingData();
 
             while (true)
             {
-                var length = await input.ReadAsync(buffer, 0, buffer.Length);
+                var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
                 if (length == 0)
                     break;
 
@@ -84,43 +119,14 @@ namespace CyoEncode
             DecodeEnd(output, data);
         }
 
-        public string Encode(byte[] input)
-        {
-            using var outputStream = new MemoryStream();
-            var data = CreateEncodingData();
-
-            foreach (var b in input)
-                EncodeByte(b, outputStream, data);
-
-            EncodeEnd(outputStream, data);
-
-            outputStream.Flush();
-            var length = (int)outputStream.Length;
-            if (length > int.MaxValue)
-                throw new Exception($"Too long! ({length:n0} bytes)");
-            return Encoding.ASCII.GetString(outputStream.GetBuffer(), 0, length);
-        }
-
-        public byte[] Decode(string input)
-        {
-            using var outputStream = new MemoryStream();
-            var data = CreateDecodingData();
-
-            foreach (var c in input)
-                DecodeChar(c, outputStream, data);
-
-            DecodeEnd(outputStream, data);
-
-            outputStream.Flush();
-            return outputStream.ToArray();
-        }
+        //
 
         protected const byte Invalid = 0xff;
 
-        protected static void InitEncodeTable(byte[] encodeTable, string charset)
+        protected static void InitEncodeTable(char[] encodeTable, string charset)
         {
             for (int i = 0; i < charset.Length; ++i)
-                encodeTable[i] = (byte)charset[i];
+                encodeTable[i] = charset[i];
         }
 
         protected static void InitDecodeTable(byte[] decodeTable, string charset)
@@ -131,6 +137,39 @@ namespace CyoEncode
             for (int i = 0; i < charset.Length; ++i)
                 decodeTable[charset[i]] = (byte)i;
         }
+
+        // Spans
+
+        protected abstract string EncodeBytes(byte[] input);
+
+        protected abstract byte[] DecodeString(string input);
+
+        protected int CalcOutputLen(int encodedLength, int inputBytes, int outputChars)
+        {
+            return (((encodedLength + outputChars - 1) / outputChars) * inputBytes);
+        }
+
+        protected void EnsurePadding(byte value, byte padding, int offset)
+        {
+            if (value != padding)
+                throw new BadCharacterException($"Bad character at offset {offset}");
+        }
+
+        protected void EnsureNotPadding(byte value, byte padding, int offset)
+        {
+            if (value == padding)
+                throw new BadCharacterException($"Bad character at offset {offset}");
+        }
+
+        protected void ValidatePadding(byte value, byte padding, int offset, ref bool expectedPadding)
+        {
+            if (value == padding)
+                expectedPadding = true;
+            else if (expectedPadding)
+                throw new BadCharacterException($"Bad character at offset {offset}");
+        }
+
+        // Streams
 
         protected abstract object CreateEncodingData();
 

@@ -66,6 +66,21 @@ namespace UnitTests
 
         [Theory]
         [InlineData("", "")]
+        [InlineData("f", "Zg")]
+        [InlineData("fo", "Zm8")]
+        [InlineData("foo", "Zm9v")]
+        [InlineData("foob", "Zm9vYg")]
+        [InlineData("fooba", "Zm9vYmE")]
+        [InlineData("foobar", "Zm9vYmFy")]
+        public void TestVectorsFromRFC4648_should_decode_successfully_with_optional_padding(string original, string encoding)
+        {
+            _base64.OptionalPadding = true;
+            var decoded = Encoding.ASCII.GetString(_base64.Decode(encoding));
+            decoded.Should().Be(original);
+        }
+
+        [Theory]
+        [InlineData("", "")]
         [InlineData("f", "Zg==")]
         [InlineData("fo", "Zm8=")]
         [InlineData("foo", "Zm9v")]
@@ -159,19 +174,35 @@ namespace UnitTests
         public void BadCharacter(string input)
         {
             Action action = () => _base64.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
         }
 
         [Theory]
         [InlineData("Zm8=Zm8=")]
-        [InlineData("Zm=8")]
-        [InlineData("Z=m8")]
-        [InlineData("Z=m=")]
-        public void BadPadding(string input)
+        public void BadPaddingInFirstBlock(string input)
         {
             Action action = () => _base64.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=') + 2}");
-            //get the position of the character _after_ the first '=', then add 2 to convert to an offset (which begin at 1)
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=')}");
+        }
+
+        [Theory]
+        [InlineData("=Zm8")]
+        [InlineData("=Z==")]
+        [InlineData("Z=m8")]
+        [InlineData("Z=m=")]
+        public void BadPaddingAtStartOfBlock(string input)
+        {
+            Action action = () => _base64.Decode(input);
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=')}");
+        }
+
+        [Theory]
+        [InlineData("Zm=8")]
+        public void BadCharacterAfterPadding(string input)
+        {
+            Action action = () => _base64.Decode(input);
+            action.Should().Throw<BadCharacterException>().WithMessage($"Bad character at offset {input.IndexOf('=') + 1}");
+            //+1 to get the offset of the character immediately after the first =
         }
     }
 }

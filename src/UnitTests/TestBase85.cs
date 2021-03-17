@@ -153,7 +153,7 @@ namespace UnitTests
             _base85.FoldZero = false;
 
             Action action = () => _base85.Decode("z");
-            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 1");
+            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
         }
     }
 }

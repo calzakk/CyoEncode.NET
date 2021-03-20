@@ -40,9 +40,9 @@ namespace CyoEncode
         // IEncoder
 
         /// <summary>
-        /// Convert bytes to a Base16-encoded string
+        /// Encode bytes to a Base16-encoded string
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <returns>Base16-encoded string</returns>
         public string Encode(byte[] input)
         {
@@ -54,9 +54,9 @@ namespace CyoEncode
         }
 
         /// <summary>
-        /// Convert bytes to a Base16-encoded string
+        /// Encode bytes to a Base16-encoded string
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <param name="output">Base16-encoded string</param>
         public Task EncodeStreamAsync(Stream input, Stream output)
         {

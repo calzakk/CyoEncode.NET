@@ -32,14 +32,14 @@ namespace CyoEncode
         /// <summary>
         /// Encode the bytes
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <returns>Encoded string</returns>
         string Encode(byte[] input);
 
         /// <summary>
         /// Encode the bytes
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <param name="output">Encoded string</param>
         Task EncodeStreamAsync(Stream input, Stream output);
 

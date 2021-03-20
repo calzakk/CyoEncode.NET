@@ -45,9 +45,9 @@ namespace CyoEncode
         // IEncoder
 
         /// <summary>
-        /// Convert bytes to a Base85-encoded string
+        /// Encode bytes to a Base85-encoded string
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <returns>Base85-encoded string</returns>
         public string Encode(byte[] input)
         {
@@ -59,9 +59,9 @@ namespace CyoEncode
         }
 
         /// <summary>
-        /// Convert bytes to a Base85-encoded string
+        /// Encode bytes to a Base85-encoded string
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
+        /// <param name="input">Bytes to encode</param>
         /// <param name="output">Base85-encoded string</param>
         public Task EncodeStreamAsync(Stream input, Stream output)
         {

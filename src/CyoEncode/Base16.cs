@@ -23,165 +23,80 @@
 // SOFTWARE.
 
 using System;
-using System.Diagnostics;
 using System.IO;
+using System.Threading.Tasks;
 
 namespace CyoEncode
 {
-    public sealed class Base16 : Encoder
+    public class Base16 : IBase16
     {
-        private const int InputBytes = 1;
-        private const int OutputChars = 2;
-        private const int MaxValue = 15;
-        private static readonly char[] EncodeTable = new char[16];
-        private static readonly byte[] DecodeTable = new byte[128];
+        // IBase16
 
-        static Base16()
+        /// <summary>
+        /// Number of bytes to allocate for the buffer when reading from a stream
+        /// </summary>
+        public int BufferSize { get; set; } = 1024 * 1024; //1 MiB
+
+        // IEncoder
+
+        /// <summary>
+        /// Convert bytes to a Base16-encoded string
+        /// </summary>
+        /// <param name="input">Bytes to convert</param>
+        /// <returns>Base16-encoded string</returns>
+        public string Encode(byte[] input)
         {
-            const string charset = "0123456789ABCDEF";
-            InitEncodeTable(EncodeTable, charset);
-            InitDecodeTable(DecodeTable, charset);
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+
+            var impl = new Internal.Base16(BufferSize);
+            return impl.Encode(input);
         }
 
-        // Spans
-
-        protected override string EncodeBytes(byte[] input)
+        /// <summary>
+        /// Convert bytes to a Base16-encoded string
+        /// </summary>
+        /// <param name="input">Bytes to convert</param>
+        /// <param name="output">Base16-encoded string</param>
+        public Task EncodeStreamAsync(Stream input, Stream output)
         {
-            var outputLen = (((input.Length + InputBytes - 1) / InputBytes) * OutputChars);
-            var output = new string(default, outputLen);
-            var outputOffset = 0;
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
 
-            unsafe
-            {
-                fixed (char* outputPtr = output)
-                {
-                    foreach (byte b in input)
-                    {
-                        // Input...
-                        var n1 = ((b & 0xf0) >> 4);
-                        var n2 = (b & 0x0f);
-
-                        // Validate...
-                        Debug.Assert(0 <= n1 && n1 <= MaxValue);
-                        Debug.Assert(0 <= n2 && n2 <= MaxValue);
-
-                        // Output...
-                        outputPtr[outputOffset] = EncodeTable[n1];
-                        outputPtr[outputOffset + 1] = EncodeTable[n2];
-                        outputOffset += OutputChars;
-                    }
-                }
-            }
-
-            return output;
+            var impl = new Internal.Base16(BufferSize);
+            return impl.EncodeAsync(input, output);
         }
 
-        protected override byte[] DecodeString(string input)
+        /// <summary>
+        /// Decode the Base16-encoded string
+        /// </summary>
+        /// <param name="input">Base16-encoded string</param>
+        /// <returns>Decoded bytes</returns>
+        public byte[] Decode(string input)
         {
-            if ((input.Length % OutputChars) != 0)
-                throw new BadLengthException($"Encoding has bad length: {input.Length}");
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
 
-            var outputLen = CalcOutputLen(input.Length, InputBytes, OutputChars);
-            var output = new byte[outputLen];
-            var outputOffset = 0;
-            var inputOffset = 0;
-            var remaining = input.Length;
-
-            while (remaining != 0)
-            {
-                // Inputs...
-                var in1 = NextChar(input, ref inputOffset, ref remaining);
-                var in2 = NextChar(input, ref inputOffset, ref remaining);
-
-                // Outputs...
-                output[outputOffset] = (byte)((in1 << 4) | in2);
-                outputOffset += InputBytes;
-            }
-
-            Debug.Assert(outputOffset == outputLen);
-
-            return output;
+            var impl = new Internal.Base16(BufferSize);
+            return impl.Decode(input);
         }
 
-        private byte NextChar(string input, ref int inputOffset, ref int remaining)
+        /// <summary>
+        /// Decode the Base16-encoded string
+        /// </summary>
+        /// <param name="input">Base16-encoded string</param>
+        /// <param name="output">Decoded bytes</param>
+        public Task DecodeStreamAsync(Stream input, Stream output)
         {
-            var b = DecodeTable[input[inputOffset]];
-            if (b == Invalid)
-                throw new BadCharacterException($"Bad character at offset {inputOffset}");
+            if (input == null)
+                throw new ArgumentNullException(nameof(input));
+            if (output == null)
+                throw new ArgumentNullException(nameof(output));
 
-            ++inputOffset;
-            --remaining;
-            return b;
-        }
-
-        // Streams
-
-        private class DecodingData
-        {
-            public int offset = 0;
-            public int blockSize = 0;
-            public byte blockData = 0;
-        }
-
-        protected override object CreateEncodingData() => null;
-
-        protected override object CreateDecodingData() => new DecodingData();
-
-        protected override void EncodeByte(byte b, Stream output, object context)
-        {
-            var n1 = ((b & 0xf0) >> 4);
-            var n2 = (b & 0x0f);
-
-            Debug.Assert(0 <= n1 && n1 <= MaxValue);
-            Debug.Assert(0 <= n2 && n2 <= MaxValue);
-
-            output.WriteByte((byte)EncodeTable[n1]);
-            output.WriteByte((byte)EncodeTable[n2]);
-        }
-
-        protected override void EncodeEnd(Stream output, object context)
-        {
-        }
-
-        protected override void DecodeChar(char c, Stream output, object context)
-        {
-            var data = (DecodingData)context;
-
-            ++data.offset;
-
-            byte b = DecodeTable[c];
-            if (b == Invalid)
-                throw new BadCharacterException($"Bad character at offset {data.offset}");
-
-            ++data.blockSize;
-            data.blockData <<= 4;
-            data.blockData |= b;
-
-            if (data.blockSize == OutputChars)
-            {
-                DecodeBlock(data, output);
-
-                data.blockSize = 0;
-                data.blockData = 0;
-            }
-        }
-
-        protected override void DecodeEnd(Stream output, object context)
-        {
-            var data = (DecodingData)context;
-
-            if (data.blockSize == 0)
-                return;
-
-            if (data.blockSize != OutputChars)
-                throw new BadLengthException($"Encoding has bad length: {data.offset}");
-
-            DecodeBlock(data, output);
-        }
-
-        private void DecodeBlock(DecodingData data, Stream output)
-        {
-            output.WriteByte(data.blockData);
+            var impl = new Internal.Base16(BufferSize);
+            return impl.DecodeAsync(input, output);
         }
     }
 }

@@ -34,7 +34,7 @@ namespace UnitTests
 {
     public class TestBase16
     {
-        private readonly Base16 _base16 = new Base16();
+        private readonly IBase16 _base16 = new Base16();
 
         [Theory]
         [InlineData("", "")]
@@ -72,12 +72,12 @@ namespace UnitTests
         [InlineData("foob", "666F6F62")]
         [InlineData("fooba", "666F6F6261")]
         [InlineData("foobar", "666F6F626172")]
-        public void TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
+        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
             using var output = new MemoryStream();
 
-            _base16.Encode(input, output);
+            await _base16.EncodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());
@@ -92,52 +92,12 @@ namespace UnitTests
         [InlineData("foob", "666F6F62")]
         [InlineData("fooba", "666F6F6261")]
         [InlineData("foobar", "666F6F626172")]
-        public void TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
+        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
             using var output = new MemoryStream();
 
-            _base16.Decode(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(original);
-        }
-
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_async_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
-            using var output = new MemoryStream();
-
-            await _base16.EncodeAsync(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(encoding);
-        }
-
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_async_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
-            using var output = new MemoryStream();
-
-            await _base16.DecodeAsync(input, output);
+            await _base16.DecodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());

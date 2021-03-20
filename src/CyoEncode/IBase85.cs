@@ -1,4 +1,4 @@
-﻿// IEncoder.cs - part of the CyoEncode.NET library
+﻿// IBase85.cs - part of the CyoEncode.NET library
 //
 // MIT License
 //
@@ -22,39 +22,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.IO;
-using System.Threading.Tasks;
-
 namespace CyoEncode
 {
-    public interface IEncoder
+    public interface IBase85 : IEncoder
     {
         /// <summary>
-        /// Encode the bytes
+        /// Number of bytes to allocate for the buffer when reading from a stream
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
-        /// <returns>Encoded string</returns>
-        string Encode(byte[] input);
+        int BufferSize { get; set; }
 
         /// <summary>
-        /// Encode the bytes
+        /// Output 'z' instead of '!!!!!' when encoding four zero-value bytes
         /// </summary>
-        /// <param name="input">Bytes to convert</param>
-        /// <param name="output">Encoded string</param>
-        Task EncodeStreamAsync(Stream input, Stream output);
-
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <returns>Decoded bytes</returns>
-        byte[] Decode(string input);
-
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <param name="output">Decoded bytes</param>
-        Task DecodeStreamAsync(Stream input, Stream output);
+        bool FoldZero { get; set; }
     }
 }

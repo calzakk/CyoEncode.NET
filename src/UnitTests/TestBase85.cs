@@ -34,7 +34,7 @@ namespace UnitTests
 {
     public class TestBase85
     {
-        private readonly Base85 _base85 = new Base85();
+        private readonly IBase85 _base85 = new Base85();
 
         //test taken from: https://en.wikipedia.org/wiki/Ascii85
         const string original = "Man is distinguished, not only by his reason, but by this singular passion from other "
@@ -60,12 +60,12 @@ namespace UnitTests
         }
 
         [Fact]
-        public void TestVectors_should_encode_successfully_using_streams()
+        public async Task TestVectors_should_encode_successfully_using_streams()
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
             using var output = new MemoryStream();
 
-            _base85.Encode(input, output);
+            await _base85.EncodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());
@@ -73,38 +73,12 @@ namespace UnitTests
         }
 
         [Fact]
-        public void TestVectors_should_decode_successfully_using_streams()
+        public async Task TestVectors_should_decode_successfully_using_streams()
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
             using var output = new MemoryStream();
 
-            _base85.Decode(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(original);
-        }
-
-        [Fact]
-        public async Task TestVectors_should_encode_successfully_using_async_streams()
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
-            using var output = new MemoryStream();
-
-            await _base85.EncodeAsync(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(encoding);
-        }
-
-        [Fact]
-        public async Task TestVectors_should_decode_successfully_using_async_streams()
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
-            using var output = new MemoryStream();
-
-            await _base85.DecodeAsync(input, output);
+            await _base85.DecodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());

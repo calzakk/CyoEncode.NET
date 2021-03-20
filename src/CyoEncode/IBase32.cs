@@ -1,4 +1,4 @@
-﻿// BadLengthException.cs - part of the CyoEncode.NET library
+﻿// IBase32.cs - part of the CyoEncode.NET library
 //
 // MIT License
 //
@@ -22,14 +22,18 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System;
-
 namespace CyoEncode
 {
-    public class BadLengthException : Exception
+    public interface IBase32 : IEncoder
     {
-        public BadLengthException(string message) : base(message)
-        {
-        }
+        /// <summary>
+        /// Number of bytes to allocate for the buffer when reading from a stream
+        /// </summary>
+        int BufferSize { get; set; }
+
+        /// <summary>
+        /// When enabled, the encoded string can optionally end with padding characters
+        /// </summary>
+        bool OptionalPadding { get; set; }
     }
 }

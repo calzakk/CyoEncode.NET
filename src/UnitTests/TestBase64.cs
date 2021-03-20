@@ -34,7 +34,7 @@ namespace UnitTests
 {
     public class TestBase64
     {
-        private readonly Base64 _base64 = new Base64();
+        private readonly IBase64 _base64 = new Base64();
 
         [Theory]
         [InlineData("", "")]
@@ -87,12 +87,12 @@ namespace UnitTests
         [InlineData("foob", "Zm9vYg==")]
         [InlineData("fooba", "Zm9vYmE=")]
         [InlineData("foobar", "Zm9vYmFy")]
-        public void TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
+        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
             using var output = new MemoryStream();
 
-            _base64.Encode(input, output);
+            await _base64.EncodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());
@@ -107,52 +107,12 @@ namespace UnitTests
         [InlineData("foob", "Zm9vYg==")]
         [InlineData("fooba", "Zm9vYmE=")]
         [InlineData("foobar", "Zm9vYmFy")]
-        public void TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
+        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
         {
             using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
             using var output = new MemoryStream();
 
-            _base64.Decode(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(original);
-        }
-
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "Zg==")]
-        [InlineData("fo", "Zm8=")]
-        [InlineData("foo", "Zm9v")]
-        [InlineData("foob", "Zm9vYg==")]
-        [InlineData("fooba", "Zm9vYmE=")]
-        [InlineData("foobar", "Zm9vYmFy")]
-        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_async_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
-            using var output = new MemoryStream();
-
-            await _base64.EncodeAsync(input, output);
-
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(encoding);
-        }
-
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "Zg==")]
-        [InlineData("fo", "Zm8=")]
-        [InlineData("foo", "Zm9v")]
-        [InlineData("foob", "Zm9vYg==")]
-        [InlineData("fooba", "Zm9vYmE=")]
-        [InlineData("foobar", "Zm9vYmFy")]
-        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_async_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
-            using var output = new MemoryStream();
-
-            await _base64.DecodeAsync(input, output);
+            await _base64.DecodeStreamAsync(input, output);
 
             output.Flush();
             var outputText = Encoding.ASCII.GetString(output.ToArray());

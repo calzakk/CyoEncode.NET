@@ -1,4 +1,4 @@
-﻿// IEncoder.cs - part of the CyoEncode.NET library
+﻿// Internal/Tables.cs - part of the CyoEncode.NET library
 //
 // MIT License
 //
@@ -22,39 +22,25 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using System.IO;
-using System.Threading.Tasks;
-
-namespace CyoEncode
+namespace CyoEncode.Internal
 {
-    public interface IEncoder
+    internal static class Tables
     {
-        /// <summary>
-        /// Encode the bytes
-        /// </summary>
-        /// <param name="input">Bytes to convert</param>
-        /// <returns>Encoded string</returns>
-        string Encode(byte[] input);
+        public const byte InvalidChar = 0xff;
 
-        /// <summary>
-        /// Encode the bytes
-        /// </summary>
-        /// <param name="input">Bytes to convert</param>
-        /// <param name="output">Encoded string</param>
-        Task EncodeStreamAsync(Stream input, Stream output);
+        public static (char[] encode, byte[] decode) Init(string charset)
+        {
+            var encodeTable = new char[charset.Length];
+            for (int i = 0; i < charset.Length; ++i)
+                encodeTable[i] = charset[i];
 
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <returns>Decoded bytes</returns>
-        byte[] Decode(string input);
+            var decodeTable = new byte[128];
+            for (int i = 0; i < 128; ++i)
+                decodeTable[i] = InvalidChar;
+            for (int i = 0; i < charset.Length; ++i)
+                decodeTable[charset[i]] = (byte)i;
 
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <param name="output">Decoded bytes</param>
-        Task DecodeStreamAsync(Stream input, Stream output);
+            return (encodeTable, decodeTable);
+        }
     }
 }

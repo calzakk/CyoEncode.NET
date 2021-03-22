@@ -1,6 +1,6 @@
 # CyoEncode
 
-Provides C# (.NET) functions for encoding binary data into a printable representation using Base64, Base32, Base16 (hex), or Base85/Ascii85 character sets, plus equivalent functions for the decoding of such encoded data back into its binary form.
+Provides classes for encoding binary data into a printable representation using Base64, Base32, Base16 (hex), or Base85/Ascii85 character sets, plus equivalent functions for the decoding of such encoded data back into its binary form.
 
 ## License
 

@@ -24,6 +24,9 @@
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base32 encode/decode functions
+    /// </summary>
     public interface IBase32 : IEncoder
     {
         /// <summary>

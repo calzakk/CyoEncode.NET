@@ -28,6 +28,9 @@ using System.Threading.Tasks;
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base64 encode/decode functions
+    /// </summary>
     public class Base64 : IBase64
     {
         // IBase64

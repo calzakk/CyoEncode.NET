@@ -24,6 +24,9 @@
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base64 encode/decode functions
+    /// </summary>
     public interface IBase64 : IEncoder
     {
         /// <summary>

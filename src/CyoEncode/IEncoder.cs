@@ -27,6 +27,9 @@ using System.Threading.Tasks;
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Encode/decode functions
+    /// </summary>
     public interface IEncoder
     {
         /// <summary>

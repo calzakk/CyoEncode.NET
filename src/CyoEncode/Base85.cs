@@ -28,6 +28,9 @@ using System.Threading.Tasks;
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base85/Ascii85 encode/decode functions
+    /// </summary>
     public class Base85 : IBase85
     {
         // IBase85

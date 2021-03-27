@@ -28,6 +28,9 @@ using System.Threading.Tasks;
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base16/Hexadecimal encode/decode functions
+    /// </summary>
     public class Base16 : IBase16
     {
         // IBase16

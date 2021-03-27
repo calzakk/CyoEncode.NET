@@ -24,22 +24,43 @@
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base class for exceptions
+    /// </summary>
     public abstract class Exception : System.Exception
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">Message</param>
         public Exception(string message) : base(message)
         {
         }
     }
 
+    /// <summary>
+    /// Invalid character encountered when decoding
+    /// </summary>
     public class BadCharacterException : Exception
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">Message</param>
         public BadCharacterException(string message) : base(message)
         {
         }
     }
 
+    /// <summary>
+    /// The encoded data has an invalid length
+    /// </summary>
     public class BadLengthException : Exception
     {
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="message">Message</param>
         public BadLengthException(string message) : base(message)
         {
         }

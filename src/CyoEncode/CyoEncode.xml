@@ -1,0 +1,296 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>CyoEncode</name>
+    </assembly>
+    <members>
+        <member name="T:CyoEncode.Base16">
+            <summary>
+            Base16/Hexadecimal encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base16.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="M:CyoEncode.Base16.Encode(System.Byte[])">
+            <summary>
+            Encode bytes to a Base16-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <returns>Base16-encoded string</returns>
+        </member>
+        <member name="M:CyoEncode.Base16.EncodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Encode bytes to a Base16-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <param name="output">Base16-encoded string</param>
+        </member>
+        <member name="M:CyoEncode.Base16.Decode(System.String)">
+            <summary>
+            Decode the Base16-encoded string
+            </summary>
+            <param name="input">Base16-encoded string</param>
+            <returns>Decoded bytes</returns>
+        </member>
+        <member name="M:CyoEncode.Base16.DecodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Decode the Base16-encoded string
+            </summary>
+            <param name="input">Base16-encoded string</param>
+            <param name="output">Decoded bytes</param>
+        </member>
+        <member name="T:CyoEncode.Base32">
+            <summary>
+            Base32 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base32.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base32.OptionalPadding">
+            <summary>
+            When enabled, the encoded string can optionally end with padding characters
+            </summary>
+        </member>
+        <member name="M:CyoEncode.Base32.Encode(System.Byte[])">
+            <summary>
+            Encode bytes to a Base32-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <returns>Base32-encoded string</returns>
+        </member>
+        <member name="M:CyoEncode.Base32.EncodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Encode bytes to a Base32-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <param name="output">Base32-encoded string</param>
+        </member>
+        <member name="M:CyoEncode.Base32.Decode(System.String)">
+            <summary>
+            Decode the Base32-encoded string
+            </summary>
+            <param name="input">Base32-encoded string</param>
+            <returns>Decoded bytes</returns>
+        </member>
+        <member name="M:CyoEncode.Base32.DecodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Decode the Base32-encoded string
+            </summary>
+            <param name="input">Base32-encoded string</param>
+            <param name="output">Decoded bytes</param>
+        </member>
+        <member name="T:CyoEncode.Base64">
+            <summary>
+            Base64 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base64.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base64.OptionalPadding">
+            <summary>
+            When enabled, the encoded string can optionally end with padding characters
+            </summary>
+        </member>
+        <member name="M:CyoEncode.Base64.Encode(System.Byte[])">
+            <summary>
+            Encode bytes to a Base64-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <returns>Base64-encoded string</returns>
+        </member>
+        <member name="M:CyoEncode.Base64.EncodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Encode bytes to a Base64-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <param name="output">Base64-encoded string</param>
+        </member>
+        <member name="M:CyoEncode.Base64.Decode(System.String)">
+            <summary>
+            Decode the Base64-encoded string
+            </summary>
+            <param name="input">Base64-encoded string</param>
+            <returns>Decoded bytes</returns>
+        </member>
+        <member name="M:CyoEncode.Base64.DecodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Decode the Base64-encoded string
+            </summary>
+            <param name="input">Base64-encoded string</param>
+            <param name="output">Decoded bytes</param>
+        </member>
+        <member name="T:CyoEncode.Base85">
+            <summary>
+            Base85/Ascii85 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base85.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.Base85.FoldZero">
+            <summary>
+            Output 'z' instead of '!!!!!' when encoding four zero-value bytes
+            </summary>
+        </member>
+        <member name="M:CyoEncode.Base85.Encode(System.Byte[])">
+            <summary>
+            Encode bytes to a Base85-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <returns>Base85-encoded string</returns>
+        </member>
+        <member name="M:CyoEncode.Base85.EncodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Encode bytes to a Base85-encoded string
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <param name="output">Base85-encoded string</param>
+        </member>
+        <member name="M:CyoEncode.Base85.Decode(System.String)">
+            <summary>
+            Decode the Base85-encoded string
+            </summary>
+            <param name="input">Base85-encoded string</param>
+            <returns>Decoded bytes</returns>
+        </member>
+        <member name="M:CyoEncode.Base85.DecodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Decode the Base85-encoded string
+            </summary>
+            <param name="input">Base85-encoded string</param>
+            <param name="output">Decoded bytes</param>
+        </member>
+        <member name="T:CyoEncode.Exception">
+            <summary>
+            Base class for exceptions
+            </summary>
+        </member>
+        <member name="M:CyoEncode.Exception.#ctor(System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="message">Message</param>
+        </member>
+        <member name="T:CyoEncode.BadCharacterException">
+            <summary>
+            Invalid character encountered when decoding
+            </summary>
+        </member>
+        <member name="M:CyoEncode.BadCharacterException.#ctor(System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="message">Message</param>
+        </member>
+        <member name="T:CyoEncode.BadLengthException">
+            <summary>
+            The encoded data has an invalid length
+            </summary>
+        </member>
+        <member name="M:CyoEncode.BadLengthException.#ctor(System.String)">
+            <summary>
+            Constructor
+            </summary>
+            <param name="message">Message</param>
+        </member>
+        <member name="T:CyoEncode.IBase16">
+            <summary>
+            Base16/Hexadecimal encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase16.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="T:CyoEncode.IBase32">
+            <summary>
+            Base32 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase32.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase32.OptionalPadding">
+            <summary>
+            When enabled, the encoded string can optionally end with padding characters
+            </summary>
+        </member>
+        <member name="T:CyoEncode.IBase64">
+            <summary>
+            Base64 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase64.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase64.OptionalPadding">
+            <summary>
+            When enabled, the encoded string can optionally end with padding characters
+            </summary>
+        </member>
+        <member name="T:CyoEncode.IBase85">
+            <summary>
+            Base85/Ascii85 encode/decode functions
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase85.BufferSize">
+            <summary>
+            Number of bytes to allocate for the buffer when reading from a stream
+            </summary>
+        </member>
+        <member name="P:CyoEncode.IBase85.FoldZero">
+            <summary>
+            Output 'z' instead of '!!!!!' when encoding four zero-value bytes
+            </summary>
+        </member>
+        <member name="T:CyoEncode.IEncoder">
+            <summary>
+            Encode/decode functions
+            </summary>
+        </member>
+        <member name="M:CyoEncode.IEncoder.Encode(System.Byte[])">
+            <summary>
+            Encode the bytes
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <returns>Encoded string</returns>
+        </member>
+        <member name="M:CyoEncode.IEncoder.EncodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Encode the bytes
+            </summary>
+            <param name="input">Bytes to encode</param>
+            <param name="output">Encoded string</param>
+        </member>
+        <member name="M:CyoEncode.IEncoder.Decode(System.String)">
+            <summary>
+            Decode the encoded string
+            </summary>
+            <param name="input">Encoded string</param>
+            <returns>Decoded bytes</returns>
+        </member>
+        <member name="M:CyoEncode.IEncoder.DecodeStreamAsync(System.IO.Stream,System.IO.Stream)">
+            <summary>
+            Decode the encoded string
+            </summary>
+            <param name="input">Encoded string</param>
+            <param name="output">Decoded bytes</param>
+        </member>
+    </members>
+</doc>

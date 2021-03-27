@@ -24,6 +24,9 @@
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base16/Hexadecimal encode/decode functions
+    /// </summary>
     public interface IBase16 : IEncoder
     {
         /// <summary>

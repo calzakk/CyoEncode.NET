@@ -28,6 +28,9 @@ using System.Threading.Tasks;
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base32 encode/decode functions
+    /// </summary>
     public class Base32 : IBase32
     {
         // IBase32

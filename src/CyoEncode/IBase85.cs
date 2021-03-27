@@ -24,6 +24,9 @@
 
 namespace CyoEncode
 {
+    /// <summary>
+    /// Base85/Ascii85 encode/decode functions
+    /// </summary>
     public interface IBase85 : IEncoder
     {
         /// <summary>

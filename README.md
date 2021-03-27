@@ -2,6 +2,11 @@
 
 Provides classes for encoding binary data into a printable representation using Base64, Base32, Base16 (hex), or Base85/Ascii85 character sets, plus equivalent functions for the decoding of such encoded data back into its binary form.
 
+Features:
+- Targets .NET Standard 2.1;
+- Works with .NET Core 3.1 or .NET 5;
+- Available as a [NuGet package](https://www.nuget.org/packages/CyoEncode).
+
 ## Supported encoders
 
 - Base85/Ascii85
@@ -13,15 +18,12 @@ Provides classes for encoding binary data into a printable representation using 
 
 CyoEncode is simple to use:
 
-### Encoding
-
 Encoding takes an array of bytes, and outputs an encoded string:
 
 ```csharp
 var encoder = new CyoEncode.Base85();
 
 byte[] bytes = ...
-
 string encoded = encoder.Encode(bytes);
 ```
 
@@ -31,13 +33,12 @@ To use another encoder, simply instantiate the relevant class; for example:
 var encoder = new CyoEncode.Base32();
 ```
 
-### Decoding
-
 Decoding takes the encoded string, and outputs an array of decoded bytes:
 
 ```csharp
 var decoder = new CyoEncode.Base85();
 
+string encoded = ...;
 byte[] decoded = decoder.Decode(encoded);
 ```
 

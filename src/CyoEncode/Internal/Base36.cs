@@ -1,4 +1,4 @@
-﻿// Internal/Base85.cs - part of the CyoEncode.NET library
+// Internal/Base36.cs - part of the CyoEncode.NET library
 //
 // MIT License
 //
@@ -28,17 +28,20 @@ using System.IO;
 
 namespace CyoEncode.Internal
 {
-    internal class Base85 : Encoder
+    internal class Base36 : Encoder
     {
         private const int InputBytes = 4;
-        private const int OutputChars = 5;
+        private const int OutputChars = 6;
+        private readonly char[] _encodeTable;
+        private readonly byte[] _decodeTable;
         private readonly int _bufferSize;
-        private readonly bool _foldZero;
 
-        public Base85(int bufferSize, bool foldZero)
+        public Base36(int bufferSize)
         {
+            var (encode, decode) = Tables.Init("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ=");
+            _encodeTable = encode;
+            _decodeTable = decode;
             _bufferSize = bufferSize;
-            _foldZero = foldZero;
         }
 
         protected override int GetBufferSize() => _bufferSize;
@@ -73,53 +76,53 @@ namespace CyoEncode.Internal
                             else
                                 ++padding;
                         }
-                        if (_foldZero && n == 0)
-                        {
-                            outputPtr[outputOffset] = 'z';
-                            ++outputOffset;
-                            continue;
-                        }
-                        var n5 = (n % 85);
-                        n = (n - n5) / 85;
-                        var n4 = (n % 85);
-                        n = (n - n4) / 85;
-                        var n3 = (n % 85);
-                        n = (n - n3) / 85;
-                        var n2 = (n % 85);
-                        n = (n - n2) / 85;
+                        var n6 = (n % 36);
+                        n = (n - n6) / 36;
+                        var n5 = (n % 36);
+                        n = (n - n5) / 36;
+                        var n4 = (n % 36);
+                        n = (n - n4) / 36;
+                        var n3 = (n % 36);
+                        n = (n - n3) / 36;
+                        var n2 = (n % 36);
+                        n = (n - n2) / 36;
                         var n1 = n;
 
                         // Validate...
-                        Debug.Assert(0 <= n1 && n1 < 85);
-                        Debug.Assert(0 <= n2 && n2 < 85);
-                        Debug.Assert(0 <= n3 && n3 < 85);
-                        Debug.Assert(0 <= n4 && n4 < 85);
-                        Debug.Assert(0 <= n5 && n5 < 85);
+                        Debug.Assert(0 <= n1 && n1 < 36);
+                        Debug.Assert(0 <= n2 && n2 < 36);
+                        Debug.Assert(0 <= n3 && n3 < 36);
+                        Debug.Assert(0 <= n4 && n4 < 36);
+                        Debug.Assert(0 <= n5 && n5 < 36);
+                        Debug.Assert(0 <= n6 && n6 < 36);
 
                         // Output...
                         if (padding == 0)
                         {
-                            // 5 chars
-                            outputPtr[outputOffset] = (char)(n1 + '!');
-                            outputPtr[outputOffset + 1] = (char)(n2 + '!');
-                            outputPtr[outputOffset + 2] = (char)(n3 + '!');
-                            outputPtr[outputOffset + 3] = (char)(n4 + '!');
-                            outputPtr[outputOffset + 4] = (char)(n5 + '!');
+                            // 6 chars
+                            outputPtr[outputOffset] = _encodeTable[n1];
+                            outputPtr[outputOffset + 1] = _encodeTable[n2];
+                            outputPtr[outputOffset + 2] = _encodeTable[n3];
+                            outputPtr[outputOffset + 3] = _encodeTable[n4];
+                            outputPtr[outputOffset + 4] = _encodeTable[n5];
+                            outputPtr[outputOffset + 5] = _encodeTable[n6];
                             outputOffset += OutputChars;
                         }
                         else
                         {
-                            // Final; 1-5 chars
-                            Debug.Assert(1 <= padding && padding <= 4);
-                            outputPtr[outputOffset++] = (char)(n1 + '!');
+                            // Final; 1-6 chars
+                            Debug.Assert(1 <= padding && padding <= 2);
+                            outputPtr[outputOffset] = _encodeTable[n1];
+                            if (padding < 5)
+                                outputPtr[outputOffset++] = _encodeTable[n2];
                             if (padding < 4)
-                                outputPtr[outputOffset++] = (char)(n2 + '!');
+                                outputPtr[outputOffset++] = _encodeTable[n3];
                             if (padding < 3)
-                                outputPtr[outputOffset++] = (char)(n3 + '!');
+                                outputPtr[outputOffset++] = _encodeTable[n4];
                             if (padding < 2)
-                                outputPtr[outputOffset++] = (char)(n4 + '!');
+                                outputPtr[outputOffset++] = _encodeTable[n5];
                             if (padding < 1)
-                                outputPtr[outputOffset++] = (char)(n5 + '!');
+                                outputPtr[outputOffset++] = _encodeTable[n6];
                         }
                     }
                 }
@@ -138,21 +141,7 @@ namespace CyoEncode.Internal
 
             while (remaining >= 1)
             {
-                if (input[inputOffset] == 'z')
-                {
-                    if (!_foldZero)
-                        throw new BadCharacterException($"Bad character at offset {inputOffset}");
-                    ++inputOffset;
-                    output[outputOffset] = 0;
-                    output[outputOffset + 1] = 0;
-                    output[outputOffset + 2] = 0;
-                    output[outputOffset + 3] = 0;
-                    outputOffset += 4;
-                    --remaining;
-                    continue;
-                }
-
-                // 5 input chars
+                // 6 input chars
                 var padding = 0;
                 var in1 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
                 var in2 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
@@ -160,13 +149,15 @@ namespace CyoEncode.Internal
                 var in3 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
                 var in4 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
                 var in5 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
+                var in6 = GetNextByte(input, inputOffset++, ref remaining, ref padding);
 
                 // 4 output bytes
-                var n = (in1 * Power(85, 4))
-                    + (in2 * Power(85, 3))
-                    + (in3 * Power(85, 2))
-                    + (in4 * Power(85, 1))
-                    + in5;
+                var n = (in1 * Power(36, 5))
+                    + (in2 * Power(36, 4))
+                    + (in3 * Power(36, 3))
+                    + (in4 * Power(36, 2))
+                    + (in5 * Power(36, 1))
+                    + in6;
                 output[outputOffset++] = (byte)(n >> 24);
                 if (padding <= 2)
                 {
@@ -190,11 +181,11 @@ namespace CyoEncode.Internal
             if (inputOffset >= input.Length)
             {
                 ++padding;
-                return (85 - 1);
+                return (36 - 1);
             }
 
             var b = (byte)(input[inputOffset] - '!');
-            if (b < 85)
+            if (b < 36)
             {
                 --remaining;
                 return b;
@@ -251,52 +242,52 @@ namespace CyoEncode.Internal
         private void EncodeBlock(Stream output, EncodingData data)
         {
             // Input...
-            if (_foldZero && (data.blockData == 0) && (data.blockSize == InputBytes))
-            {
-                output.WriteByte((byte)'z');
-                data.blockSize = 0;
-                return;
-            }
             data.blockData <<= (8 * (InputBytes - data.blockSize));
-            var n5 = (byte)(data.blockData % 85);
-            data.blockData = (data.blockData - n5) / 85;
-            var n4 = (byte)(data.blockData % 85);
-            data.blockData = (data.blockData - n4) / 85;
-            var n3 = (byte)(data.blockData % 85);
-            data.blockData = (data.blockData - n3) / 85;
-            var n2 = (byte)(data.blockData % 85);
-            data.blockData = (data.blockData - n2) / 85;
+            var n6 = (byte)(data.blockData % 36);
+            data.blockData = (data.blockData - n6) / 36;
+            var n5 = (byte)(data.blockData % 36);
+            data.blockData = (data.blockData - n5) / 36;
+            var n4 = (byte)(data.blockData % 36);
+            data.blockData = (data.blockData - n4) / 36;
+            var n3 = (byte)(data.blockData % 36);
+            data.blockData = (data.blockData - n3) / 36;
+            var n2 = (byte)(data.blockData % 36);
+            data.blockData = (data.blockData - n2) / 36;
             var n1 = (byte)data.blockData;
 
             // Validate...
-            Debug.Assert(0 <= n1 && n1 < 85);
-            Debug.Assert(0 <= n2 && n2 < 85);
-            Debug.Assert(0 <= n3 && n3 < 85);
-            Debug.Assert(0 <= n4 && n4 < 85);
-            Debug.Assert(0 <= n5 && n5 < 85);
+            Debug.Assert(0 <= n1 && n1 < 36);
+            Debug.Assert(0 <= n2 && n2 < 36);
+            Debug.Assert(0 <= n3 && n3 < 36);
+            Debug.Assert(0 <= n4 && n4 < 36);
+            Debug.Assert(0 <= n5 && n5 < 36);
+            Debug.Assert(0 <= n6 && n6 < 36);
 
             // Output...
             if (data.blockSize == OutputChars)
             {
-                // 5 chars
-                output.WriteByte((byte)(n1 + '!'));
-                output.WriteByte((byte)(n2 + '!'));
-                output.WriteByte((byte)(n3 + '!'));
-                output.WriteByte((byte)(n4 + '!'));
-                output.WriteByte((byte)(n5 + '!'));
+                // 6 chars
+                output.WriteByte((byte)_encodeTable[n1]);
+                output.WriteByte((byte)_encodeTable[n2]);
+                output.WriteByte((byte)_encodeTable[n3]);
+                output.WriteByte((byte)_encodeTable[n4]);
+                output.WriteByte((byte)_encodeTable[n5]);
+                output.WriteByte((byte)_encodeTable[n6]);
             }
             else
             {
-                // Final; 1-5 chars
-                output.WriteByte((byte)(n1 + '!'));
+                // Final; 1-6 chars
+                output.WriteByte((byte)_encodeTable[n1]);
                 if (data.blockSize >= 1)
-                    output.WriteByte((byte)(n2 + '!'));
+                    output.WriteByte((byte)_encodeTable[n2]);
                 if (data.blockSize >= 2)
-                    output.WriteByte((byte)(n3 + '!'));
+                    output.WriteByte((byte)_encodeTable[n3]);
                 if (data.blockSize >= 3)
-                    output.WriteByte((byte)(n4 + '!'));
+                    output.WriteByte((byte)_encodeTable[n4]);
                 if (data.blockSize >= 4)
-                    output.WriteByte((byte)(n5 + '!'));
+                    output.WriteByte((byte)_encodeTable[n5]);
+                if (data.blockSize >= 5)
+                    output.WriteByte((byte)_encodeTable[n6]);
             }
 
             // Reset...
@@ -312,20 +303,13 @@ namespace CyoEncode.Internal
 
             ++data.offset;
 
-            if (c == 'z')
-            {
-                if (!_foldZero || (data.blockSize != 0))
-                    throw new BadCharacterException($"Bad character at offset {data.offset}");
-
-                for (var i = 0; i < InputBytes; ++i)
-                    output.WriteByte(0);
-
-                return;
-            }
+            var b = _decodeTable[c];
+            if (b == Tables.InvalidChar/* || (b != Padding && data.padding >= 1)*/)
+                throw new BadCharacterException($"Bad character at offset {data.offset}");
 
             ++data.blockSize;
             data.blockData <<= 8;
-            data.blockData |= (byte)(c - '!');
+            data.blockData |= b;
 
             if (data.blockSize != OutputChars)
                 return;
@@ -340,6 +324,10 @@ namespace CyoEncode.Internal
             if (data.blockSize == 0)
                 return;
 
+            /*var blockSize = (data.blockSize + data.padding);
+            if (blockSize != OutputChars && !_optionalPadding)
+                throw new BadLengthException($"Encoding has bad length: {data.offset}");*/
+
             DecodeBlock(output, data);
         }
 
@@ -351,25 +339,28 @@ namespace CyoEncode.Internal
             data.blockData <<= (8 * (OutputChars - data.blockSize));
 
             // Inputs...
-            var in1 = (byte)(data.blockData >> 32);
-            var in2 = data.blockSize <= 1 ? 84 : (byte)(data.blockData >> 24);
-            var in3 = data.blockSize <= 2 ? 84 : (byte)(data.blockData >> 16);
-            var in4 = data.blockSize <= 3 ? 84 : (byte)(data.blockData >> 8);
-            var in5 = data.blockSize <= 4 ? 84 : (byte)data.blockData;
+            var in1 = (byte)(data.blockData >> 25);
+            var in2 = data.blockSize <= 1 ? 35 : (byte)(data.blockData >> 20);
+            var in3 = data.blockSize <= 2 ? 35 : (byte)(data.blockData >> 15);
+            var in4 = data.blockSize <= 3 ? 35 : (byte)(data.blockData >> 10);
+            var in5 = data.blockSize <= 4 ? 35 : (byte)(data.blockData >> 5);
+            var in6 = data.blockSize <= 5 ? 35 : (byte)data.blockData;
 
             // Validate...
-            Debug.Assert(0 <= in1 && in1 < 85);
-            Debug.Assert(0 <= in2 && in2 < 85);
-            Debug.Assert(0 <= in3 && in3 < 85);
-            Debug.Assert(0 <= in4 && in4 < 85);
-            Debug.Assert(0 <= in5 && in5 < 85);
+            Debug.Assert(0 <= in1 && in1 < 36);
+            Debug.Assert(0 <= in2 && in2 < 36);
+            Debug.Assert(0 <= in3 && in3 < 36);
+            Debug.Assert(0 <= in4 && in4 < 36);
+            Debug.Assert(0 <= in5 && in5 < 36);
+            Debug.Assert(0 <= in6 && in6 < 36);
 
             // Outputs...
-            var n = (in1 * Power(85, 4))
-                + (in2 * Power(85, 3))
-                + (in3 * Power(85, 2))
-                + (in4 * Power(85, 1))
-                + in5;
+            var n = (in1 * Power(36, 5))
+                + (in2 * Power(36, 4))
+                + (in3 * Power(36, 3))
+                + (in4 * Power(36, 2))
+                + (in5 * Power(36, 1))
+                + in6;
             if (data.blockSize == OutputChars)
             {
                 // 4 bytes

@@ -58,7 +58,7 @@ namespace CyoEncode.Internal
             {
                 fixed (char* outputPtr = output)
                 {
-                    foreach (byte b in input)
+                    foreach (var b in input)
                     {
                         // Input...
                         var n1 = ((b & 0xf0) >> 4);
@@ -153,7 +153,7 @@ namespace CyoEncode.Internal
 
             ++data.offset;
 
-            byte b = _decodeTable[c];
+            var b = _decodeTable[c];
             if (b == Tables.InvalidChar)
                 throw new BadCharacterException($"Bad character at offset {data.offset}");
 

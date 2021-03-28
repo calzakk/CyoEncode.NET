@@ -267,7 +267,7 @@ namespace CyoEncode.Internal
 
             ++data.offset;
 
-            byte b = _decodeTable[c];
+            var b = _decodeTable[c];
             if (b == Tables.InvalidChar || (b != Padding && data.padding >= 1))
                 throw new BadCharacterException($"Bad character at offset {data.offset}");
 

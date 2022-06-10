@@ -1,5 +1,7 @@
 # CyoEncode
 
+__Latest stable version__ : [![NuGet](https://img.shields.io/nuget/v/CyoEncode.svg)](https://www.nuget.org/packages/CyoEncode/)
+
 Provides classes for encoding binary data into a printable representation using Base64, Base32, Base16 (hex), or Base85/Ascii85 character sets, plus equivalent functions for the decoding of such encoded data back into its binary form.
 
 Features:

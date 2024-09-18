@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,50 +26,49 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace CyoEncode.Internal
+namespace CyoEncode.Internal;
+
+internal static class StreamEncoder
 {
-    internal static class StreamEncoder
+    public static async Task EncodeAsync(Stream input, Stream output, int bufferSize,
+        Func<object> encodeStart,
+        Action<byte, Stream, object> encodeByte,
+        Action<Stream, object> encodeEnd)
     {
-        public static async Task EncodeAsync(Stream input, Stream output, int bufferSize,
-            Func<object> EncodeStart,
-            Action<byte, Stream, object> EncodeByte,
-            Action<Stream, object> EncodeEnd)
+        var buffer = new byte[bufferSize];
+        var context = encodeStart();
+
+        while (true)
         {
-            var buffer = new byte[bufferSize];
-            var context = EncodeStart();
+            var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            if (length == 0)
+                break;
 
-            while (true)
-            {
-                var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                if (length == 0)
-                    break;
-
-                for (var i = 0; i < length; ++i)
-                    EncodeByte(buffer[i], output, context);
-            }
-
-            EncodeEnd(output, context);
+            for (var i = 0; i < length; ++i)
+                encodeByte(buffer[i], output, context);
         }
 
-        public static async Task DecodeAsync(Stream input, Stream output, int bufferSize,
-            Func<object> DecodeStart,
-            Action<char, Stream, object> DecodeChar,
-            Action<Stream, object> DecodeEnd)
+        encodeEnd(output, context);
+    }
+
+    public static async Task DecodeAsync(Stream input, Stream output, int bufferSize,
+        Func<object> decodeStart,
+        Action<char, Stream, object> decodeChar,
+        Action<Stream, object> decodeEnd)
+    {
+        var buffer = new byte[bufferSize];
+        var context = decodeStart();
+
+        while (true)
         {
-            var buffer = new byte[bufferSize];
-            var context = DecodeStart();
+            var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
+            if (length == 0)
+                break;
 
-            while (true)
-            {
-                var length = await input.ReadAsync(buffer, 0, buffer.Length).ConfigureAwait(false);
-                if (length == 0)
-                    break;
-
-                for (var i = 0; i < length; ++i)
-                    DecodeChar((char)buffer[i], output, context);
-            }
-
-            DecodeEnd(output, context);
+            for (var i = 0; i < length; ++i)
+                decodeChar((char)buffer[i], output, context);
         }
+
+        decodeEnd(output, context);
     }
 }

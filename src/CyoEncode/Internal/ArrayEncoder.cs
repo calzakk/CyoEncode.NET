@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,54 +24,53 @@
 
 using System;
 
-namespace CyoEncode.Internal
+namespace CyoEncode.Internal;
+
+internal static class ArrayEncoder
 {
-    internal static class ArrayEncoder
+    public static string Encode(byte[] input, Func<byte[], string> encodeBytes)
     {
-        public static string Encode(byte[] input, Func<byte[], string> encodeBytes)
-        {
-            if (input.Length == 0)
-                return string.Empty;
+        if (input.Length == 0)
+            return string.Empty;
 
-            return encodeBytes(input);
-        }
+        return encodeBytes(input);
+    }
 
-        public static byte[] Decode(string input, Func<string, byte[]> decodeString)
-        {
-            if (input.Length == 0)
-                return Array.Empty<byte>();
+    public static byte[] Decode(string input, Func<string, byte[]> decodeString)
+    {
+        if (input.Length == 0)
+            return Array.Empty<byte>();
 
-            return decodeString(input);
-        }
+        return decodeString(input);
+    }
 
-        public static int GetLengthOfOutputString(int inputLength, int inputBytes, int outputChars)
-        {
-            return (((inputLength + inputBytes - 1) / inputBytes) * outputChars);
-        }
+    public static int GetLengthOfOutputString(int inputLength, int inputBytes, int outputChars)
+    {
+        return (((inputLength + inputBytes - 1) / inputBytes) * outputChars);
+    }
 
-        public static int GetLengthOfOutputBuffer(int encodedLength, int inputBytes, int outputChars)
-        {
-            return (((encodedLength + outputChars - 1) / outputChars) * inputBytes);
-        }
+    public static int GetLengthOfOutputBuffer(int encodedLength, int inputBytes, int outputChars)
+    {
+        return (((encodedLength + outputChars - 1) / outputChars) * inputBytes);
+    }
 
-        public static void EnsurePadding(byte value, byte padding, int offset)
-        {
-            if (value != padding)
-                throw new BadCharacterException($"Bad character at offset {offset}");
-        }
+    public static void EnsurePadding(byte value, byte padding, int offset)
+    {
+        if (value != padding)
+            throw new BadCharacterException($"Bad character at offset {offset}");
+    }
 
-        public static void EnsureNotPadding(byte value, byte padding, int offset)
-        {
-            if (value == padding)
-                throw new BadCharacterException($"Bad character at offset {offset}");
-        }
+    public static void EnsureNotPadding(byte value, byte padding, int offset)
+    {
+        if (value == padding)
+            throw new BadCharacterException($"Bad character at offset {offset}");
+    }
 
-        public static void ValidatePadding(byte value, byte padding, int offset, ref bool expectedPadding)
-        {
-            if (value == padding)
-                expectedPadding = true;
-            else if (expectedPadding)
-                throw new BadCharacterException($"Bad character at offset {offset}");
-        }
+    public static void ValidatePadding(byte value, byte padding, int offset, ref bool expectedPadding)
+    {
+        if (value == padding)
+            expectedPadding = true;
+        else if (expectedPadding)
+            throw new BadCharacterException($"Bad character at offset {offset}");
     }
 }

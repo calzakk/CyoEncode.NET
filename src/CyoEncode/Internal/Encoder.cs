@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,46 +25,45 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace CyoEncode.Internal
+namespace CyoEncode.Internal;
+
+internal abstract class Encoder
 {
-    internal abstract class Encoder
+    public string Encode(byte[] input)
     {
-        public string Encode(byte[] input)
-        {
-            return ArrayEncoder.Encode(input, EncodeBytes);
-        }
-
-        public Task EncodeAsync(Stream input, Stream output)
-        {
-            return StreamEncoder.EncodeAsync(input, output, GetBufferSize(), EncodeStart, EncodeByte, EncodeEnd);
-        }
-
-        public byte[] Decode(string input)
-        {
-            return ArrayEncoder.Decode(input, DecodeString);
-        }
-
-        public Task DecodeAsync(Stream input, Stream output)
-        {
-            return StreamEncoder.DecodeAsync(input, output, GetBufferSize(), DecodeStart, DecodeChar, DecodeEnd);
-        }
-
-        protected abstract int GetBufferSize();
-
-        protected abstract string EncodeBytes(byte[] input);
-
-        protected abstract byte[] DecodeString(string input);
-
-        protected abstract object EncodeStart();
-
-        protected abstract void EncodeByte(byte b, Stream output, object context);
-
-        protected abstract void EncodeEnd(Stream output, object context);
-
-        protected abstract object DecodeStart();
-
-        protected abstract void DecodeChar(char c, Stream output, object context);
-
-        protected abstract void DecodeEnd(Stream output, object context);
+        return ArrayEncoder.Encode(input, EncodeBytes);
     }
+
+    public Task EncodeAsync(Stream input, Stream output)
+    {
+        return StreamEncoder.EncodeAsync(input, output, GetBufferSize(), EncodeStart, EncodeByte, EncodeEnd);
+    }
+
+    public byte[] Decode(string input)
+    {
+        return ArrayEncoder.Decode(input, DecodeString);
+    }
+
+    public Task DecodeAsync(Stream input, Stream output)
+    {
+        return StreamEncoder.DecodeAsync(input, output, GetBufferSize(), DecodeStart, DecodeChar, DecodeEnd);
+    }
+
+    protected abstract int GetBufferSize();
+
+    protected abstract string EncodeBytes(byte[] input);
+
+    protected abstract byte[] DecodeString(string input);
+
+    protected abstract object EncodeStart();
+
+    protected abstract void EncodeByte(byte b, Stream output, object context);
+
+    protected abstract void EncodeEnd(Stream output, object context);
+
+    protected abstract object DecodeStart();
+
+    protected abstract void DecodeChar(char c, Stream output, object context);
+
+    protected abstract void DecodeEnd(Stream output, object context);
 }

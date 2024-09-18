@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -26,80 +26,79 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 
-namespace CyoEncode
+namespace CyoEncode;
+
+/// <summary>
+/// Base16/Hexadecimal encode/decode functions
+/// </summary>
+public class Base16 : IBase16
 {
+    // IBase16
+
     /// <summary>
-    /// Base16/Hexadecimal encode/decode functions
+    /// Number of bytes to allocate for the buffer when reading from a stream
     /// </summary>
-    public class Base16 : IBase16
+    public int BufferSize { get; set; } = 1024 * 1024; //1 MiB
+
+    // IEncoder
+
+    /// <summary>
+    /// Encode bytes to a Base16-encoded string
+    /// </summary>
+    /// <param name="input">Bytes to encode</param>
+    /// <returns>Base16-encoded string</returns>
+    public string Encode(byte[] input)
     {
-        // IBase16
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
 
-        /// <summary>
-        /// Number of bytes to allocate for the buffer when reading from a stream
-        /// </summary>
-        public int BufferSize { get; set; } = 1024 * 1024; //1 MiB
+        var impl = new Internal.Base16(BufferSize);
+        return impl.Encode(input);
+    }
 
-        // IEncoder
+    /// <summary>
+    /// Encode bytes to a Base16-encoded string
+    /// </summary>
+    /// <param name="input">Bytes to encode</param>
+    /// <param name="output">Base16-encoded string</param>
+    public Task EncodeStreamAsync(Stream input, Stream output)
+    {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
+        if (output == null)
+            throw new ArgumentNullException(nameof(output));
 
-        /// <summary>
-        /// Encode bytes to a Base16-encoded string
-        /// </summary>
-        /// <param name="input">Bytes to encode</param>
-        /// <returns>Base16-encoded string</returns>
-        public string Encode(byte[] input)
-        {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
+        var impl = new Internal.Base16(BufferSize);
+        return impl.EncodeAsync(input, output);
+    }
 
-            var impl = new Internal.Base16(BufferSize);
-            return impl.Encode(input);
-        }
+    /// <summary>
+    /// Decode the Base16-encoded string
+    /// </summary>
+    /// <param name="input">Base16-encoded string</param>
+    /// <returns>Decoded bytes</returns>
+    public byte[] Decode(string input)
+    {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
 
-        /// <summary>
-        /// Encode bytes to a Base16-encoded string
-        /// </summary>
-        /// <param name="input">Bytes to encode</param>
-        /// <param name="output">Base16-encoded string</param>
-        public Task EncodeStreamAsync(Stream input, Stream output)
-        {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
-            if (output == null)
-                throw new ArgumentNullException(nameof(output));
+        var impl = new Internal.Base16(BufferSize);
+        return impl.Decode(input);
+    }
 
-            var impl = new Internal.Base16(BufferSize);
-            return impl.EncodeAsync(input, output);
-        }
+    /// <summary>
+    /// Decode the Base16-encoded string
+    /// </summary>
+    /// <param name="input">Base16-encoded string</param>
+    /// <param name="output">Decoded bytes</param>
+    public Task DecodeStreamAsync(Stream input, Stream output)
+    {
+        if (input == null)
+            throw new ArgumentNullException(nameof(input));
+        if (output == null)
+            throw new ArgumentNullException(nameof(output));
 
-        /// <summary>
-        /// Decode the Base16-encoded string
-        /// </summary>
-        /// <param name="input">Base16-encoded string</param>
-        /// <returns>Decoded bytes</returns>
-        public byte[] Decode(string input)
-        {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
-
-            var impl = new Internal.Base16(BufferSize);
-            return impl.Decode(input);
-        }
-
-        /// <summary>
-        /// Decode the Base16-encoded string
-        /// </summary>
-        /// <param name="input">Base16-encoded string</param>
-        /// <param name="output">Decoded bytes</param>
-        public Task DecodeStreamAsync(Stream input, Stream output)
-        {
-            if (input == null)
-                throw new ArgumentNullException(nameof(input));
-            if (output == null)
-                throw new ArgumentNullException(nameof(output));
-
-            var impl = new Internal.Base16(BufferSize);
-            return impl.DecodeAsync(input, output);
-        }
+        var impl = new Internal.Base16(BufferSize);
+        return impl.DecodeAsync(input, output);
     }
 }

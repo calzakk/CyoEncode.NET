@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,105 +22,104 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-using CyoEncode;
-using FluentAssertions;
 using System;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
+using CyoEncode;
+using FluentAssertions;
 using Xunit;
 
-namespace UnitTests
+namespace UnitTests;
+
+public class TestBase16
 {
-    public class TestBase16
+    private readonly IBase16 _base16 = new Base16();
+
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("f", "66")]
+    [InlineData("fo", "666F")]
+    [InlineData("foo", "666F6F")]
+    [InlineData("foob", "666F6F62")]
+    [InlineData("fooba", "666F6F6261")]
+    [InlineData("foobar", "666F6F626172")]
+    public void TestVectorsFromRFC4648_should_encode_successfully(string original, string encoding)
     {
-        private readonly IBase16 _base16 = new Base16();
+        var encoded = _base16.Encode(Encoding.ASCII.GetBytes(original));
+        encoded.Should().Be(encoding);
+    }
 
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public void TestVectorsFromRFC4648_should_encode_successfully(string original, string encoding)
-        {
-            var encoded = _base16.Encode(Encoding.ASCII.GetBytes(original));
-            encoded.Should().Be(encoding);
-        }
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("f", "66")]
+    [InlineData("fo", "666F")]
+    [InlineData("foo", "666F6F")]
+    [InlineData("foob", "666F6F62")]
+    [InlineData("fooba", "666F6F6261")]
+    [InlineData("foobar", "666F6F626172")]
+    public void TestVectorsFromRFC4648_should_decode_successfully(string original, string encoding)
+    {
+        var decoded = Encoding.ASCII.GetString(_base16.Decode(encoding));
+        decoded.Should().Be(original);
+    }
 
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public void TestVectorsFromRFC4648_should_decode_successfully(string original, string encoding)
-        {
-            var decoded = Encoding.ASCII.GetString(_base16.Decode(encoding));
-            decoded.Should().Be(original);
-        }
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("f", "66")]
+    [InlineData("fo", "666F")]
+    [InlineData("foo", "666F6F")]
+    [InlineData("foob", "666F6F62")]
+    [InlineData("fooba", "666F6F6261")]
+    [InlineData("foobar", "666F6F626172")]
+    public async Task TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
+    {
+        using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
+        using var output = new MemoryStream();
 
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public async Task TestVectorsFromRFC4648_should_encode_successfully_using_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(original));
-            using var output = new MemoryStream();
+        await _base16.EncodeStreamAsync(input, output);
 
-            await _base16.EncodeStreamAsync(input, output);
+        output.Flush();
+        var outputText = Encoding.ASCII.GetString(output.ToArray());
+        outputText.Should().Be(encoding);
+    }
 
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(encoding);
-        }
+    [Theory]
+    [InlineData("", "")]
+    [InlineData("f", "66")]
+    [InlineData("fo", "666F")]
+    [InlineData("foo", "666F6F")]
+    [InlineData("foob", "666F6F62")]
+    [InlineData("fooba", "666F6F6261")]
+    [InlineData("foobar", "666F6F626172")]
+    public async Task TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
+    {
+        using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
+        using var output = new MemoryStream();
 
-        [Theory]
-        [InlineData("", "")]
-        [InlineData("f", "66")]
-        [InlineData("fo", "666F")]
-        [InlineData("foo", "666F6F")]
-        [InlineData("foob", "666F6F62")]
-        [InlineData("fooba", "666F6F6261")]
-        [InlineData("foobar", "666F6F626172")]
-        public async Task TestVectorsFromRFC4648_should_decode_successfully_using_streams(string original, string encoding)
-        {
-            using var input = new MemoryStream(Encoding.ASCII.GetBytes(encoding));
-            using var output = new MemoryStream();
+        await _base16.DecodeStreamAsync(input, output);
 
-            await _base16.DecodeStreamAsync(input, output);
+        output.Flush();
+        var outputText = Encoding.ASCII.GetString(output.ToArray());
+        outputText.Should().Be(original);
+    }
 
-            output.Flush();
-            var outputText = Encoding.ASCII.GetString(output.ToArray());
-            outputText.Should().Be(original);
-        }
+    [Theory]
+    [InlineData("A")]
+    [InlineData("AAA")]
+    [InlineData("AAAAA")]
+    public void BadLength(string input)
+    {
+        Action action = () => _base16.Decode(input);
+        action.Should().Throw<BadLengthException>().WithMessage($"Encoding has bad length: {input.Length}");
+    }
 
-        [Theory]
-        [InlineData("A")]
-        [InlineData("AAA")]
-        [InlineData("AAAAA")]
-        public void BadLength(string input)
-        {
-            Action action = () => _base16.Decode(input);
-            action.Should().Throw<BadLengthException>().WithMessage($"Encoding has bad length: {input.Length}");
-        }
-
-        [Theory]
-        [InlineData("GG")]
-        [InlineData("ZZ")]
-        public void BadCharacter(string input)
-        {
-            Action action = () => _base16.Decode(input);
-            action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
-        }
+    [Theory]
+    [InlineData("GG")]
+    [InlineData("ZZ")]
+    public void BadCharacter(string input)
+    {
+        Action action = () => _base16.Decode(input);
+        action.Should().Throw<BadCharacterException>().WithMessage("Bad character at offset 0");
     }
 }

@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace CyoEncode
+namespace CyoEncode;
+
+/// <summary>
+/// Base32 encode/decode functions
+/// </summary>
+public interface IBase32 : IEncoder
 {
     /// <summary>
-    /// Base32 encode/decode functions
+    /// Number of bytes to allocate for the buffer when reading from a stream
     /// </summary>
-    public interface IBase32 : IEncoder
-    {
-        /// <summary>
-        /// Number of bytes to allocate for the buffer when reading from a stream
-        /// </summary>
-        int BufferSize { get; set; }
+    int BufferSize { get; set; }
 
-        /// <summary>
-        /// When enabled, the encoded string can optionally end with padding characters
-        /// </summary>
-        bool OptionalPadding { get; set; }
-    }
+    /// <summary>
+    /// When enabled, the encoded string can optionally end with padding characters
+    /// </summary>
+    bool OptionalPadding { get; set; }
 }

@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,47 +22,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace CyoEncode
+namespace CyoEncode;
+
+/// <summary>
+/// Base class for exceptions
+/// </summary>
+public abstract class Exception : System.Exception
 {
     /// <summary>
-    /// Base class for exceptions
+    /// Constructor
     /// </summary>
-    public abstract class Exception : System.Exception
+    /// <param name="message">Message</param>
+    protected Exception(string message) : base(message)
     {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="message">Message</param>
-        public Exception(string message) : base(message)
-        {
-        }
     }
+}
 
+/// <summary>
+/// Invalid character encountered when decoding
+/// </summary>
+public class BadCharacterException : Exception
+{
     /// <summary>
-    /// Invalid character encountered when decoding
+    /// Constructor
     /// </summary>
-    public class BadCharacterException : Exception
+    /// <param name="message">Message</param>
+    public BadCharacterException(string message) : base(message)
     {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="message">Message</param>
-        public BadCharacterException(string message) : base(message)
-        {
-        }
     }
+}
 
+/// <summary>
+/// The encoded data has an invalid length
+/// </summary>
+public class BadLengthException : Exception
+{
     /// <summary>
-    /// The encoded data has an invalid length
+    /// Constructor
     /// </summary>
-    public class BadLengthException : Exception
+    /// <param name="message">Message</param>
+    public BadLengthException(string message) : base(message)
     {
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="message">Message</param>
-        public BadLengthException(string message) : base(message)
-        {
-        }
     }
 }

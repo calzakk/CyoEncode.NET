@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,21 +22,20 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace CyoEncode
+namespace CyoEncode;
+
+/// <summary>
+/// Base85/Ascii85 encode/decode functions
+/// </summary>
+public interface IBase85 : IEncoder
 {
     /// <summary>
-    /// Base85/Ascii85 encode/decode functions
+    /// Number of bytes to allocate for the buffer when reading from a stream
     /// </summary>
-    public interface IBase85 : IEncoder
-    {
-        /// <summary>
-        /// Number of bytes to allocate for the buffer when reading from a stream
-        /// </summary>
-        int BufferSize { get; set; }
+    int BufferSize { get; set; }
 
-        /// <summary>
-        /// Output 'z' instead of '!!!!!' when encoding four zero-value bytes
-        /// </summary>
-        bool FoldZero { get; set; }
-    }
+    /// <summary>
+    /// Output 'z' instead of '!!!!!' when encoding four zero-value bytes
+    /// </summary>
+    bool FoldZero { get; set; }
 }

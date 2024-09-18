@@ -6,7 +6,7 @@
     <Authors>Graham Bull</Authors>
     <Company />
     <Description>Provides classes for encoding binary data into a printable representation using Base64, Base32, Base16 (hex), or Base85/Ascii85 character sets, plus equivalent functions for the decoding of such encoded data back into its binary form.</Description>
-    <Copyright>Copyright (c) 2017-2021 Graham Bull</Copyright>
+    <Copyright>Copyright (c) 2017-2024 Graham Bull</Copyright>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression></PackageLicenseExpression>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
@@ -14,6 +14,7 @@
     <RepositoryUrl></RepositoryUrl>
     <RepositoryType></RepositoryType>
     <PackageTags>encoding encoder decoding decoder base64 base32 base16 hex base85 ascii85</PackageTags>
+    <LangVersion>default</LangVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

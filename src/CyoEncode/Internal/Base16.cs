@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,162 +25,161 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace CyoEncode.Internal
+namespace CyoEncode.Internal;
+
+internal class Base16 : Encoder
 {
-    internal class Base16 : Encoder
+    private const int InputBytes = 1;
+    private const int OutputChars = 2;
+    private const int MaxValue = 15;
+    private readonly char[] _encodeTable;
+    private readonly byte[] _decodeTable;
+    private readonly int _bufferSize;
+
+    public Base16(int bufferSize)
     {
-        private const int InputBytes = 1;
-        private const int OutputChars = 2;
-        private const int MaxValue = 15;
-        private readonly char[] _encodeTable;
-        private readonly byte[] _decodeTable;
-        private readonly int _bufferSize;
+        var (encode, decode) = Tables.Init("0123456789ABCDEF");
+        _encodeTable = encode;
+        _decodeTable = decode;
+        _bufferSize = bufferSize;
+    }
 
-        public Base16(int bufferSize)
+    protected override int GetBufferSize() => _bufferSize;
+
+    // Arrays
+
+    protected override string EncodeBytes(byte[] input)
+    {
+        var outputLen = ArrayEncoder.GetLengthOfOutputString(input.Length, InputBytes, OutputChars);
+        var output = new string(default, outputLen);
+        var outputOffset = 0;
+
+        unsafe
         {
-            var (encode, decode) = Tables.Init("0123456789ABCDEF");
-            _encodeTable = encode;
-            _decodeTable = decode;
-            _bufferSize = bufferSize;
-        }
-
-        protected override int GetBufferSize() => _bufferSize;
-
-        // Arrays
-
-        protected override string EncodeBytes(byte[] input)
-        {
-            var outputLen = ArrayEncoder.GetLengthOfOutputString(input.Length, InputBytes, OutputChars);
-            var output = new string(default, outputLen);
-            var outputOffset = 0;
-
-            unsafe
+            fixed (char* outputPtr = output)
             {
-                fixed (char* outputPtr = output)
+                foreach (var b in input)
                 {
-                    foreach (byte b in input)
-                    {
-                        // Input...
-                        var n1 = ((b & 0xf0) >> 4);
-                        var n2 = (b & 0x0f);
+                    // Input...
+                    var n1 = ((b & 0xf0) >> 4);
+                    var n2 = (b & 0x0f);
 
-                        // Validate...
-                        Debug.Assert(0 <= n1 && n1 <= MaxValue);
-                        Debug.Assert(0 <= n2 && n2 <= MaxValue);
+                    // Validate...
+                    Debug.Assert(0 <= n1 && n1 <= MaxValue);
+                    Debug.Assert(0 <= n2 && n2 <= MaxValue);
 
-                        // Output...
-                        outputPtr[outputOffset] = _encodeTable[n1];
-                        outputPtr[outputOffset + 1] = _encodeTable[n2];
-                        outputOffset += OutputChars;
-                    }
+                    // Output...
+                    outputPtr[outputOffset] = _encodeTable[n1];
+                    outputPtr[outputOffset + 1] = _encodeTable[n2];
+                    outputOffset += OutputChars;
                 }
             }
-
-            return output;
         }
 
-        protected override byte[] DecodeString(string input)
+        return output;
+    }
+
+    protected override byte[] DecodeString(string input)
+    {
+        if ((input.Length % OutputChars) != 0)
+            throw new BadLengthException($"Encoding has bad length: {input.Length}");
+
+        var outputLen = ArrayEncoder.GetLengthOfOutputBuffer(input.Length, InputBytes, OutputChars);
+        var output = new byte[outputLen];
+        var outputOffset = 0;
+        var inputOffset = 0;
+        var remaining = input.Length;
+
+        while (remaining != 0)
         {
-            if ((input.Length % OutputChars) != 0)
-                throw new BadLengthException($"Encoding has bad length: {input.Length}");
+            // Inputs...
+            var in1 = GetNextChar(input, ref inputOffset, ref remaining);
+            var in2 = GetNextChar(input, ref inputOffset, ref remaining);
 
-            var outputLen = ArrayEncoder.GetLengthOfOutputBuffer(input.Length, InputBytes, OutputChars);
-            var output = new byte[outputLen];
-            var outputOffset = 0;
-            var inputOffset = 0;
-            var remaining = input.Length;
-
-            while (remaining != 0)
-            {
-                // Inputs...
-                var in1 = GetNextChar(input, ref inputOffset, ref remaining);
-                var in2 = GetNextChar(input, ref inputOffset, ref remaining);
-
-                // Outputs...
-                output[outputOffset] = (byte)((in1 << 4) | in2);
-                outputOffset += InputBytes;
-            }
-
-            Debug.Assert(outputOffset == outputLen);
-
-            return output;
+            // Outputs...
+            output[outputOffset] = (byte)((in1 << 4) | in2);
+            outputOffset += InputBytes;
         }
 
-        private byte GetNextChar(string input, ref int inputOffset, ref int remaining)
-        {
-            var b = _decodeTable[input[inputOffset]];
-            if (b == Tables.InvalidChar)
-                throw new BadCharacterException($"Bad character at offset {inputOffset}");
+        Debug.Assert(outputOffset == outputLen);
 
-            ++inputOffset;
-            --remaining;
-            return b;
-        }
+        return output;
+    }
 
-        // Streams
+    private byte GetNextChar(string input, ref int inputOffset, ref int remaining)
+    {
+        var b = _decodeTable[input[inputOffset]];
+        if (b == Tables.InvalidChar)
+            throw new BadCharacterException($"Bad character at offset {inputOffset}");
 
-        private class DecodingData
-        {
-            public int offset = 0;
-            public int blockSize = 0;
-            public byte blockData = 0;
-        }
+        ++inputOffset;
+        --remaining;
+        return b;
+    }
 
-        protected override object EncodeStart() => null;
+    // Streams
 
-        protected override void EncodeByte(byte b, Stream output, object context)
-        {
-            var n1 = ((b & 0xf0) >> 4);
-            var n2 = (b & 0x0f);
+    private class DecodingData
+    {
+        public int Offset = 0;
+        public int BlockSize = 0;
+        public byte BlockData = 0;
+    }
 
-            Debug.Assert(0 <= n1 && n1 <= MaxValue);
-            Debug.Assert(0 <= n2 && n2 <= MaxValue);
+    protected override object EncodeStart() => null;
 
-            output.WriteByte((byte)_encodeTable[n1]);
-            output.WriteByte((byte)_encodeTable[n2]);
-        }
+    protected override void EncodeByte(byte b, Stream output, object context)
+    {
+        var n1 = ((b & 0xf0) >> 4);
+        var n2 = (b & 0x0f);
 
-        protected override void EncodeEnd(Stream output, object context)
-        {
-            //nothing to do
-        }
+        Debug.Assert(0 <= n1 && n1 <= MaxValue);
+        Debug.Assert(0 <= n2 && n2 <= MaxValue);
 
-        protected override object DecodeStart() => new DecodingData();
+        output.WriteByte((byte)_encodeTable[n1]);
+        output.WriteByte((byte)_encodeTable[n2]);
+    }
 
-        protected override void DecodeChar(char c, Stream output, object context)
-        {
-            var data = (DecodingData)context;
+    protected override void EncodeEnd(Stream output, object context)
+    {
+        //nothing to do
+    }
 
-            ++data.offset;
+    protected override object DecodeStart() => new DecodingData();
 
-            byte b = _decodeTable[c];
-            if (b == Tables.InvalidChar)
-                throw new BadCharacterException($"Bad character at offset {data.offset}");
+    protected override void DecodeChar(char c, Stream output, object context)
+    {
+        var data = (DecodingData)context;
 
-            ++data.blockSize;
-            data.blockData <<= 4;
-            data.blockData |= b;
+        ++data.Offset;
 
-            if (data.blockSize != OutputChars)
-                return;
+        var b = _decodeTable[c];
+        if (b == Tables.InvalidChar)
+            throw new BadCharacterException($"Bad character at offset {data.Offset}");
 
-            output.WriteByte(data.blockData);
+        ++data.BlockSize;
+        data.BlockData <<= 4;
+        data.BlockData |= b;
 
-            data.blockSize = 0;
-            data.blockData = 0;
-        }
+        if (data.BlockSize != OutputChars)
+            return;
 
-        protected override void DecodeEnd(Stream output, object context)
-        {
-            var data = context as DecodingData;
+        output.WriteByte(data.BlockData);
 
-            if (data.blockSize == 0)
-                return;
+        data.BlockSize = 0;
+        data.BlockData = 0;
+    }
 
-            if (data.blockSize != OutputChars)
-                throw new BadLengthException($"Encoding has bad length: {data.offset}");
+    protected override void DecodeEnd(Stream output, object context)
+    {
+        var data = (DecodingData)context;
 
-            output.WriteByte(data.blockData);
-        }
+        if (data.BlockSize == 0)
+            return;
+
+        if (data.BlockSize != OutputChars)
+            throw new BadLengthException($"Encoding has bad length: {data.Offset}");
+
+        output.WriteByte(data.BlockData);
     }
 }

@@ -6,7 +6,7 @@ Provides classes for encoding binary data into a printable representation using 
 
 Features:
 - Targets .NET Standard 2.1;
-- Works with .NET Core 3.1, .NET 5, or .NET 6;
+- Works with .NET Core 3.1 and .NET 5 or above;
 - Available as a [NuGet package](https://www.nuget.org/packages/CyoEncode).
 
 ## Supported encoders
@@ -102,7 +102,7 @@ Of course, assume the source file cannot be trusted! Ensure its size is reasonab
 
 ### The MIT License (MIT)
 
-Copyright (c) 2017-2021 Graham Bull
+Copyright (c) 2017-2024 Graham Bull
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

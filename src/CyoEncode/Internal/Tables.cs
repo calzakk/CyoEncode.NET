@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,25 +22,24 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-namespace CyoEncode.Internal
+namespace CyoEncode.Internal;
+
+internal static class Tables
 {
-    internal static class Tables
+    public const byte InvalidChar = 0xff;
+
+    public static (char[] encode, byte[] decode) Init(string charset)
     {
-        public const byte InvalidChar = 0xff;
+        var encodeTable = new char[charset.Length];
+        for (var i = 0; i < charset.Length; ++i)
+            encodeTable[i] = charset[i];
 
-        public static (char[] encode, byte[] decode) Init(string charset)
-        {
-            var encodeTable = new char[charset.Length];
-            for (int i = 0; i < charset.Length; ++i)
-                encodeTable[i] = charset[i];
+        var decodeTable = new byte[128];
+        for (var i = 0; i < 128; ++i)
+            decodeTable[i] = InvalidChar;
+        for (var i = 0; i < charset.Length; ++i)
+            decodeTable[charset[i]] = (byte)i;
 
-            var decodeTable = new byte[128];
-            for (int i = 0; i < 128; ++i)
-                decodeTable[i] = InvalidChar;
-            for (int i = 0; i < charset.Length; ++i)
-                decodeTable[charset[i]] = (byte)i;
-
-            return (encodeTable, decodeTable);
-        }
+        return (encodeTable, decodeTable);
     }
 }

@@ -2,7 +2,7 @@
 //
 // MIT License
 //
-// Copyright(c) 2017-2021 Graham Bull
+// Copyright(c) 2017-2024 Graham Bull
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,39 +25,38 @@
 using System.IO;
 using System.Threading.Tasks;
 
-namespace CyoEncode
+namespace CyoEncode;
+
+/// <summary>
+/// Encode/decode functions
+/// </summary>
+public interface IEncoder
 {
     /// <summary>
-    /// Encode/decode functions
+    /// Encode the bytes
     /// </summary>
-    public interface IEncoder
-    {
-        /// <summary>
-        /// Encode the bytes
-        /// </summary>
-        /// <param name="input">Bytes to encode</param>
-        /// <returns>Encoded string</returns>
-        string Encode(byte[] input);
+    /// <param name="input">Bytes to encode</param>
+    /// <returns>Encoded string</returns>
+    string Encode(byte[] input);
 
-        /// <summary>
-        /// Encode the bytes
-        /// </summary>
-        /// <param name="input">Bytes to encode</param>
-        /// <param name="output">Encoded string</param>
-        Task EncodeStreamAsync(Stream input, Stream output);
+    /// <summary>
+    /// Encode the bytes
+    /// </summary>
+    /// <param name="input">Bytes to encode</param>
+    /// <param name="output">Encoded string</param>
+    Task EncodeStreamAsync(Stream input, Stream output);
 
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <returns>Decoded bytes</returns>
-        byte[] Decode(string input);
+    /// <summary>
+    /// Decode the encoded string
+    /// </summary>
+    /// <param name="input">Encoded string</param>
+    /// <returns>Decoded bytes</returns>
+    byte[] Decode(string input);
 
-        /// <summary>
-        /// Decode the encoded string
-        /// </summary>
-        /// <param name="input">Encoded string</param>
-        /// <param name="output">Decoded bytes</param>
-        Task DecodeStreamAsync(Stream input, Stream output);
-    }
+    /// <summary>
+    /// Decode the encoded string
+    /// </summary>
+    /// <param name="input">Encoded string</param>
+    /// <param name="output">Decoded bytes</param>
+    Task DecodeStreamAsync(Stream input, Stream output);
 }
